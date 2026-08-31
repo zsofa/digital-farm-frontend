@@ -1,1 +1,70 @@
-<p>dashboard works!</p>
+<div class="dashboard">
+    <div class="top">
+        <div class="field-canvas-card">
+            <div class="card-header">
+                <h1>Farm canvas</h1>
+                <button>Add field</button>
+            </div>
+            <div class="farm-canvas-placeholder">
+                <div
+                    class="mock-field field-1"
+                    [class.active] ="selectedField.id === 'f1'"
+                    (click)="selectField(fields[0])"> F1
+
+                </div>
+                <div
+                    class="mock-field field-2"
+                    [class.active] ="selectedField.id === 'field-2'"
+                    (click)="selectField(fields[1])"> F2
+
+                </div>
+            </div>
+        </div>
+        
+        <div class="field-panel-card">
+            <div class="card-header">
+                <h2>Field params</h2>
+            </div>
+
+            <div class="field-parameters">
+                <p><strong>Field:</strong> {{selectedField.name}}</p>
+                <p><strong>Soil type:</strong> {{selectedField.soilType}}</p>
+                <p><strong>Crop type:</strong> {{selectedField.cropType}}</p>
+                <p><strong>Strategy:</strong> {{selectedField.strategy}}</p>
+                <p><strong>Irrigation:</strong> {{selectedField.irrigation}}</p>
+
+                <p><strong>Predicted Yield:</strong> {{selectedField.yield}}</p>
+                <p><strong>Sustainability Score:</strong> {{selectedField.sustainability}}</p>
+                <p><strong>Soil Health:</strong> Low Risk</p>
+                <p><strong>Water Quality:</strong> Medium Risk</p>
+                <p><strong>Carbon Footprint:</strong> Low Risk</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="bottom-card">
+        <div class="card-header">
+            <h2>Farm summary</h2>
+        </div>
+
+        <div class="summary-grid">
+                <div class="summary-item">
+                    <span>Total Yield</span>
+                    <strong>54.2 t</strong>
+                </div>
+                <div class="summary-item">
+                    <span>Water usage</span>
+                    <strong>54.2 t</strong>
+                </div>
+                <div class="summary-item">
+                    <span>Sustainability Score</span>
+                    <strong>76</strong>
+                </div>
+                <div class="summary-item">
+                    <span>Environmental risk</span>
+                    <strong>Low</strong>
+                </div>
+        </div>
+        
+    </div>
+</div>
