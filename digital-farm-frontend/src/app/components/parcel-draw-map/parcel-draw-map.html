@@ -1,0 +1,123 @@
+<div class="drawing-toolbar">
+
+  <div>
+
+    <strong>
+      Parcel boundary
+    </strong>
+
+    <span>
+      Mark the parcel boundary directly on the map.
+    </span>
+
+  </div>
+
+
+  <div class="drawing-actions">
+
+    @if (!drawing()) {
+
+      <button
+        type="button"
+        class="draw-button"
+        [disabled]="!ready()"
+        (click)="startDrawing()"
+      >
+        @if (hasDrawing()) {
+          Redraw parcel
+        } @else {
+          Draw parcel
+        }
+      </button>
+
+    }
+
+
+    @if (drawing()) {
+
+      <button
+        type="button"
+        class="finish-button"
+        [disabled]="pointCount() < 3"
+        (click)="finishDrawing()"
+      >
+        Finish boundary
+      </button>
+
+      <button
+        type="button"
+        class="clear-button"
+        (click)="clearDrawing()"
+      >
+        Cancel drawing
+      </button>
+
+    }
+
+
+    @if (
+      hasDrawing() &&
+      !drawing()
+    ) {
+
+      <button
+        type="button"
+        class="clear-button"
+        (click)="clearDrawing()"
+      >
+        Clear
+      </button>
+
+    }
+
+  </div>
+
+</div>
+
+
+@if (drawing()) {
+
+  <div class="drawing-status">
+
+    <strong>
+      Drawing parcel boundary
+    </strong>
+
+    <span>
+      {{ pointCount() }} points added.
+      Add at least three points, then select
+      “Finish boundary”.
+    </span>
+
+  </div>
+
+} @else if (hasDrawing()) {
+
+  <div class="drawing-status success">
+
+    <strong>
+      Parcel boundary is ready.
+    </strong>
+
+    <span>
+      The parcel can now be saved.
+    </span>
+
+  </div>
+
+} @else {
+
+  <div class="drawing-status">
+
+    Select “Draw parcel”, then click on the map
+    to add the parcel boundary points.
+
+  </div>
+
+}
+
+
+<div
+  #mapContainer
+  class="map-container"
+></div>

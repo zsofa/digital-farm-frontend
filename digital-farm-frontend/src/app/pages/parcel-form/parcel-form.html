@@ -1,0 +1,432 @@
+<section class="parcel-form-page">
+
+  @if (loading()) {
+
+    <div class="state-card">
+      Loading parcel...
+    </div>
+
+  } @else if (
+    isEditMode() &&
+    !editingParcel()
+  ) {
+
+    <div class="state-card error">
+      {{
+        errorMessage()
+          ?? 'Unable to load parcel.'
+      }}
+    </div>
+
+  } @else if (
+    farm();
+    as currentFarm
+  ) {
+
+    <div class="page-header">
+
+      <div>
+
+        <button
+          type="button"
+          class="back-button"
+          (click)="cancel()"
+        >
+          ←
+          {{
+            isEditMode()
+              ? 'Back to parcel'
+              : 'Back to dashboard'
+          }}
+        </button>
+
+
+        <span class="eyebrow">
+          Parcel
+        </span>
+
+
+        <h1>
+          {{
+            isEditMode()
+              ? 'Edit parcel'
+              : 'Add parcel'
+          }}
+        </h1>
+
+
+        <p>
+
+          @if (isEditMode()) {
+
+            Update the editable
+            parcel information.
+
+          } @else {
+
+            Add a new parcel to
+            {{ currentFarm.name }}.
+
+          }
+
+        </p>
+
+      </div>
+
+    </div>
+
+
+    @if (errorMessage()) {
+
+      <div class="message error-message">
+        {{ errorMessage() }}
+      </div>
+
+    }
+
+
+    <form
+      [formGroup]="form"
+      (ngSubmit)="save()"
+    >
+
+      <section class="form-card">
+
+        <div class="form-grid">
+
+          <div class="form-field">
+
+            <label for="name">
+              Parcel name
+            </label>
+
+
+            <input
+              id="name"
+              type="text"
+              formControlName="name"
+              placeholder="e.g. North parcel"
+            />
+
+
+            @if (
+              form.controls.name.touched &&
+              form.controls.name.invalid
+            ) {
+
+              <span class="field-error">
+                Parcel name is required.
+              </span>
+
+            }
+
+          </div>
+
+
+          <div class="form-field">
+
+            <label for="area">
+              Official area
+            </label>
+
+
+            <div class="input-with-unit">
+
+              <input
+                id="area"
+                type="number"
+                min="0.01"
+                step="0.01"
+                formControlName="official_area_ha"
+              />
+
+              <span>
+                ha
+              </span>
+
+            </div>
+
+
+            @if (isEditMode()) {
+
+              <span class="field-info">
+                Official area cannot be changed
+                after parcel creation.
+              </span>
+
+            } @else if (
+              form.controls
+                .official_area_ha
+                .touched &&
+              form.controls
+                .official_area_ha
+                .invalid
+            ) {
+
+              <span class="field-error">
+                Enter a valid parcel area.
+              </span>
+
+            }
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      @if (
+        isEditMode() &&
+        editingParcel();
+        as parcel
+      ) {
+
+        <section class="locked-card">
+
+          <div>
+
+            <span class="locked-label">
+              Parcel boundary
+            </span>
+
+            <h2>
+              Boundary is locked
+            </h2>
+
+            <p>
+              A parcel represents a specific
+              physical field. Its boundary
+              cannot be changed after creation.
+            </p>
+
+            <p>
+              If the physical field has changed,
+              create a new parcel instead.
+            </p>
+
+          </div>
+
+
+          <div class="locked-info">
+
+            <div>
+
+              <span>
+                County
+              </span>
+
+              <strong>
+                {{ parcel.county_name }}
+              </strong>
+
+            </div>
+
+
+            <div>
+
+              <span>
+                Official area
+              </span>
+
+              <strong>
+                {{ parcel.official_area_ha }} ha
+              </strong>
+
+            </div>
+
+          </div>
+
+        </section>
+
+      } @else {
+
+        <section class="map-card">
+
+          <app-parcel-draw-map
+            [existingParcels]="
+              currentFarm.parcels
+            "
+            (geometryChange)="
+              onGeometryChange($event)
+            "
+          />
+
+        </section>
+
+
+        @if (
+          mappedAreaHa() !== null &&
+          officialAreaHa() > 0
+        ) {
+
+          <section
+            class="area-check-card"
+            [class.area-ok]="
+              areaDifferenceLevel() === 'ok'
+            "
+            [class.area-warning]="
+              areaDifferenceLevel() === 'warning'
+            "
+            [class.area-strong]="
+              areaDifferenceLevel() === 'strong'
+            "
+          >
+
+            <div class="area-check-header">
+
+              <div>
+
+                <span class="area-check-label">
+                  Boundary check
+                </span>
+
+                <h2>
+                  Parcel area comparison
+                </h2>
+
+              </div>
+
+
+              <span
+                class="area-status-badge"
+              >
+
+                @if (
+                  areaDifferenceLevel()
+                    === 'ok'
+                ) {
+
+                  OK
+
+                } @else if (
+                  areaDifferenceLevel()
+                    === 'warning'
+                ) {
+
+                  Check area
+
+                } @else {
+
+                  Large difference
+
+                }
+
+              </span>
+
+            </div>
+
+
+            <div class="area-values">
+
+              <div>
+
+                <span>
+                  Official area
+                </span>
+
+                <strong>
+                  {{
+                    officialAreaHa().toFixed(2)
+                  }}
+                  ha
+                </strong>
+
+              </div>
+
+
+              <div>
+
+                <span>
+                  Mapped area
+                </span>
+
+                <strong>
+                  {{ formatMappedArea() }}
+                  ha
+                </strong>
+
+              </div>
+
+
+              <div>
+
+                <span>
+                  Difference
+                </span>
+
+                <strong>
+                  {{ formatAreaDifference() }}
+                </strong>
+
+              </div>
+
+            </div>
+
+
+            <p class="area-check-message">
+              {{ areaDifferenceMessage() }}
+            </p>
+
+
+            <p class="area-check-note">
+              The official area will be used
+              for yield totals and economic
+              calculations. The mapped area is
+              provided only as a boundary check.
+            </p>
+
+          </section>
+
+        }
+
+      }
+
+
+      <div class="form-actions">
+
+        <button
+          type="button"
+          class="cancel-button"
+          [disabled]="saving()"
+          (click)="cancel()"
+        >
+          Cancel
+        </button>
+
+
+        <button
+          type="submit"
+          class="save-button"
+          [disabled]="saving()"
+        >
+
+          @if (saving()) {
+
+            Saving...
+
+          } @else if (isEditMode()) {
+
+            Save changes
+
+          } @else {
+
+            Create parcel
+
+          }
+
+        </button>
+
+      </div>
+
+    </form>
+
+  } @else {
+
+    <div class="state-card">
+      No active farm selected.
+    </div>
+
+  }
+
+</section>

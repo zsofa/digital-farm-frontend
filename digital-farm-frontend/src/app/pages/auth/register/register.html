@@ -1,0 +1,113 @@
+<div class="auth-page">
+  <div class="auth-brand">
+    <div class="brand-mark">DF</div>
+
+    <div>
+      <div class="brand-name">Digital Farm</div>
+      <div class="brand-subtitle">
+        Agricultural Decision Support Platform
+      </div>
+    </div>
+  </div>
+
+  <div class="auth-container">
+    <section class="auth-intro">
+      <span class="eyebrow">
+        Start managing your farm digitally
+      </span>
+
+      <h1>
+        Your farm.
+        <span>Your data.</span>
+      </h1>
+
+      <p>
+        Create your account to manage parcels, plan growing
+        seasons and explore data-driven yield scenarios.
+      </p>
+    </section>
+
+    <section class="auth-card">
+      <div class="card-header">
+        <h2>Create account</h2>
+        <p>
+          Set up your Digital Farm account.
+        </p>
+      </div>
+
+      <form
+        [formGroup]="form"
+        (ngSubmit)="submit()"
+      >
+        <div class="name-grid">
+          <div class="form-field">
+            <label for="first_name">First name</label>
+
+            <input
+              id="first_name"
+              type="text"
+              formControlName="first_name"
+              placeholder="John"
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="last_name">Last name</label>
+
+            <input
+              id="last_name"
+              type="text"
+              formControlName="last_name"
+              placeholder="Smith"
+            />
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label for="email">Email address</label>
+
+          <input
+            id="email"
+            type="email"
+            formControlName="email"
+            placeholder="john@example.com"
+          />
+        </div>
+
+        <div class="form-field">
+          <label for="password">Password</label>
+
+          <input
+            id="password"
+            type="password"
+            formControlName="password"
+            placeholder="Minimum 8 characters"
+          />
+        </div>
+
+        @if (errorMessage()) {
+          <div class="error-message">
+            {{ errorMessage() }}
+          </div>
+        }
+
+        <button
+          type="submit"
+          class="primary-button"
+          [disabled]="loading()"
+        >
+          @if (loading()) {
+            Creating account...
+          } @else {
+            Create account
+          }
+        </button>
+      </form>
+
+      <div class="register-link">
+        Already have an account?
+        <a routerLink="/login">Sign in</a>
+      </div>
+    </section>
+  </div>
+</div>

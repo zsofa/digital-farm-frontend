@@ -1,0 +1,560 @@
+<section class="season-page">
+
+  @if (loading()) {
+
+    <div class="state-card">
+      Loading growing season...
+    </div>
+
+  } @else if (!season()) {
+
+    <div class="state-card error">
+      {{
+        errorMessage() ??
+          'Growing season not found.'
+      }}
+    </div>
+
+  } @else if (
+    season();
+    as currentSeason
+  ) {
+
+    <div class="page-header">
+
+      <div>
+
+        <button
+          type="button"
+          class="back-button"
+          (click)="goBack()"
+        >
+          ← Back to parcel
+        </button>
+
+        <span class="eyebrow">
+          Growing season
+        </span>
+
+        <h1>
+          {{
+            currentSeason
+              .season_start_year
+          }}
+          ·
+          {{
+            formatCrop(
+              currentSeason.crop
+            )
+          }}
+        </h1>
+
+        <p>
+          {{
+            formatStrategy(
+              currentSeason
+                .farming_strategy
+            )
+          }}
+          farming strategy
+        </p>
+
+      </div>
+
+
+      <div class="season-header-actions">
+
+        <a
+          class="secondary-action"
+          [routerLink]="[
+            '/parcel-seasons',
+            currentSeason.id,
+            'edit'
+          ]"
+        >
+          Edit management plan
+        </a>
+
+
+        <button
+          type="button"
+          class="primary-button"
+          [disabled]="runningSimulation()"
+          (click)="runSimulation()"
+        >
+
+          @if (
+            runningSimulation()
+          ) {
+
+            Running simulation...
+
+          } @else {
+
+            Run yield simulation
+
+          }
+
+        </button>
+
+      </div>
+
+    </div>
+
+
+    @if (errorMessage()) {
+
+      <div
+        class="message error-message"
+      >
+        {{ errorMessage() }}
+      </div>
+
+    }
+
+
+    <div class="summary-grid">
+
+      <article class="summary-card">
+
+        <span>
+          Crop
+        </span>
+
+        <strong>
+          {{
+            formatCrop(
+              currentSeason.crop
+            )
+          }}
+        </strong>
+
+      </article>
+
+
+      <article class="summary-card">
+
+        <span>
+          Farming strategy
+        </span>
+
+        <strong>
+          {{
+            formatStrategy(
+              currentSeason
+                .farming_strategy
+            )
+          }}
+        </strong>
+
+      </article>
+
+
+      <article class="summary-card">
+
+        <span>
+          Previous simulations
+        </span>
+
+        <strong>
+          {{
+            currentSeason
+              .simulations.length
+          }}
+        </strong>
+
+      </article>
+
+    </div>
+
+
+    <div class="content-grid">
+
+      <section class="content-card">
+
+        <div class="section-header">
+
+          <div>
+
+            <span class="section-label">
+              Management
+            </span>
+
+            <h2>
+              Season configuration
+            </h2>
+
+          </div>
+
+        </div>
+
+
+        <div class="data-list">
+
+          <div class="data-row">
+
+            <span>
+              Target growing season
+            </span>
+
+            <strong>
+              {{
+                currentSeason
+                  .season_start_year
+              }}
+            </strong>
+
+          </div>
+
+
+          <div class="data-row">
+
+            <span>
+              Crop
+            </span>
+
+            <strong>
+              {{
+                formatCrop(
+                  currentSeason.crop
+                )
+              }}
+            </strong>
+
+          </div>
+
+
+          <div class="data-row">
+
+            <span>
+              Farming strategy
+            </span>
+
+            <strong>
+              {{
+                formatStrategy(
+                  currentSeason
+                    .farming_strategy
+                )
+              }}
+            </strong>
+
+          </div>
+
+
+          <div class="data-row">
+
+            <span>
+              Irrigation
+            </span>
+
+            <strong>
+              {{
+                currentSeason
+                  .is_irrigated
+                  ? 'Yes'
+                  : 'No'
+              }}
+            </strong>
+
+          </div>
+
+
+          <div class="data-row">
+
+            <span>
+              Machine use
+            </span>
+
+            <strong>
+              {{
+                formatMachineUse(
+                  currentSeason
+                    .machine_use
+                )
+              }}
+            </strong>
+
+          </div>
+
+
+          <div class="data-row">
+
+            <span>
+              Fertilizer type
+            </span>
+
+            <strong>
+              {{
+                currentSeason
+                  .fertilizer_type
+                  ?? 'Not specified'
+              }}
+            </strong>
+
+          </div>
+
+
+          <div class="data-row">
+
+            <span>
+              Fertilizer quantity
+            </span>
+
+            <strong>
+
+              @if (
+                currentSeason
+                  .fertilizer_quantity_kg_ha
+                !== null
+              ) {
+
+                {{
+                  currentSeason
+                    .fertilizer_quantity_kg_ha
+                }}
+                kg/ha
+
+              } @else {
+
+                Not specified
+
+              }
+
+            </strong>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      <section
+        class="content-card simulations-card"
+      >
+
+        <div class="section-header">
+
+          <div>
+
+            <span class="section-label">
+              Yield simulation
+            </span>
+
+            <h2>
+              Simulation history
+            </h2>
+
+          </div>
+
+        </div>
+
+        @if (
+          currentSeason
+            .simulations.length > 0
+        ) {
+
+          <div class="simulation-list">
+
+            @for (
+              simulation
+                of currentSeason
+                  .simulations;
+              track
+                simulation
+                  .simulation_id
+            ) {
+
+              <article class="simulation-row">
+
+                <div class="simulation-main">
+
+                  <div
+                    class="simulation-title-row"
+                  >
+
+                    <span class="simulation-id">
+                      Simulation
+                      #{{
+                        simulation
+                          .simulation_id
+                      }}
+                    </span>
+
+
+                    <span
+                      class="status-badge"
+                      [class.current]="
+                        simulation.status ===
+                          'current'
+                      "
+                      [class.outdated]="
+                        simulation.status ===
+                          'outdated'
+                      "
+                    >
+
+                      @if (
+                        simulation.status ===
+                          'current'
+                      ) {
+
+                        Current
+
+                      } @else {
+
+                        Outdated
+
+                      }
+
+                    </span>
+
+                  </div>
+
+
+                  @if (
+                    simulation
+                      .expected_yield_t_ha
+                    !== null
+                  ) {
+
+                    <strong>
+                      Expected yield:
+                      {{
+                        simulation
+                          .expected_yield_t_ha
+                      }}
+                      t/ha
+                    </strong>
+
+                  } @else {
+
+                    <strong>
+                      Regional recent yield:
+                      {{
+                        simulation
+                          .recent_yield_mean_t_ha
+                      }}
+                      t/ha
+                    </strong>
+
+                  }
+
+
+                  @if (
+                    simulation
+                      .expected_total_t
+                    !== null
+                  ) {
+
+                    <span
+                      class="simulation-total"
+                    >
+                      Expected production:
+                      {{
+                        simulation
+                          .expected_total_t
+                      }}
+                      t
+                    </span>
+
+                  }
+
+
+                  <span
+                    class="simulation-date"
+                  >
+                    {{
+                      simulation.created_at
+                        | date:
+                          'd MMM y, HH:mm'
+                    }}
+                  </span>
+
+
+                  @if (
+                    simulation.status ===
+                      'outdated'
+                  ) {
+
+                    <span
+                      class="simulation-warning"
+                    >
+                      Soil data changed after this
+                      simulation was run.
+                    </span>
+
+                  }
+
+                </div>
+
+
+                <button
+                  type="button"
+                  class="simulation-button"
+                  (click)="
+                    openSimulation(
+                      simulation
+                        .simulation_id
+                    )
+                  "
+                >
+                  View results
+                </button>
+
+              </article>
+
+            }
+
+          </div>
+
+        } @else {
+
+          <div class="empty-simulation">
+
+            <h3>
+              No yield simulations yet
+            </h3>
+
+            <p>
+              Run a simulation to explore
+              potential yield outcomes under
+              different seasonal weather
+              scenarios.
+            </p>
+
+            <button
+              type="button"
+              class="secondary-action"
+              [disabled]="
+                runningSimulation()
+              "
+              (click)="runSimulation()"
+            >
+
+              @if (
+                runningSimulation()
+              ) {
+
+                Running simulation...
+
+              } @else {
+
+                Run first simulation
+
+              }
+
+            </button>
+
+          </div>
+
+        }
+
+      </section>
+
+    </div>
+
+  }
+
+</section>

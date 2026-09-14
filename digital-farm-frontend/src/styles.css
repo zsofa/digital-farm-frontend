@@ -1,3 +1,7 @@
+@import 'maplibre-gl/dist/maplibre-gl.css';
+@import 'maplibre-gl/dist/maplibre-gl.css';
+@import '@geoman-io/maplibre-geoman-free/dist/maplibre-geoman.css';
+
 body {
   margin: 0;
   font-family: Arial, sans-serif;

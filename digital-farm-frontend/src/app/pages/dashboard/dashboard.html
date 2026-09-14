@@ -1,70 +1,497 @@
-<div class="dashboard">
-    <div class="top">
-        <div class="field-canvas-card">
-            <div class="card-header">
-                <h1>Farm canvas</h1>
-                <button>Add field</button>
-            </div>
-            <div class="farm-canvas-placeholder">
-                <div
-                    class="mock-field field-1"
-                    [class.active] ="selectedField.id === 'f1'"
-                    (click)="selectField(fields[0])"> F1
+<section class="dashboard-page">
 
-                </div>
-                <div
-                    class="mock-field field-2"
-                    [class.active] ="selectedField.id === 'field-2'"
-                    (click)="selectField(fields[1])"> F2
+  @if (loading()) {
 
-                </div>
-            </div>
-        </div>
-        
-        <div class="field-panel-card">
-            <div class="card-header">
-                <h2>Field params</h2>
-            </div>
+    <div class="state-card">
 
-            <div class="field-parameters">
-                <p><strong>Field:</strong> {{selectedField.name}}</p>
-                <p><strong>Soil type:</strong> {{selectedField.soilType}}</p>
-                <p><strong>Crop type:</strong> {{selectedField.cropType}}</p>
-                <p><strong>Strategy:</strong> {{selectedField.strategy}}</p>
-                <p><strong>Irrigation:</strong> {{selectedField.irrigation}}</p>
+      <div class="state-title">
+        Loading farm data...
+      </div>
 
-                <p><strong>Predicted Yield:</strong> {{selectedField.yield}}</p>
-                <p><strong>Sustainability Score:</strong> {{selectedField.sustainability}}</p>
-                <p><strong>Soil Health:</strong> Low Risk</p>
-                <p><strong>Water Quality:</strong> Medium Risk</p>
-                <p><strong>Carbon Footprint:</strong> Low Risk</p>
-            </div>
-        </div>
+      <div class="state-text">
+        Please wait while your farm information is being loaded.
+      </div>
+
     </div>
 
-    <div class="bottom-card">
+  } @else if (errorMessage()) {
+
+    <div class="state-card error">
+
+      <div class="state-title">
+        Something went wrong
+      </div>
+
+      <div class="state-text">
+        {{ errorMessage() }}
+      </div>
+
+    </div>
+
+  } @else if (!farm()) {
+
+    <div class="empty-dashboard">
+
+      <div class="empty-badge">
+        Digital Farm
+      </div>
+
+      <h1>
+        Start with your first farm
+      </h1>
+
+      <p>
+        Create a farm to begin managing parcels,
+        planning growing seasons and running yield simulations.
+      </p>
+
+      <a
+        class="primary-button"
+        routerLink="/farms/new"
+      >
+        Create farm
+      </a>
+
+    </div>
+
+  } @else if (
+    farm();
+    as currentFarm
+  ) {
+
+    <div class="dashboard-header">
+
+      <div>
+
+        <div class="eyebrow">
+          Farm
+        </div>
+
+        <h1>
+          {{ currentFarm.name }}
+        </h1>
+
+        <p>
+          {{ currentFarm.county_name }}
+        </p>
+
+      </div>
+
+
+      <div class="dashboard-actions">
+
+        <a
+          class="secondary-button"
+          routerLink="/farms/new"
+        >
+          Add farm
+        </a>
+
+        <a
+          class="secondary-button"
+          [routerLink]="[
+            '/farms',
+            currentFarm.id,
+            'edit'
+          ]"
+        >
+          Manage farm
+        </a>
+
+        <a
+          class="primary-button"
+          routerLink="/parcels/new"
+        >
+          Add parcel
+        </a>
+
+      </div>
+
+    </div>
+
+
+    <div class="overview-grid">
+
+      <article class="overview-card">
+
+        <div class="metric-icon">
+          P
+        </div>
+
+        <div class="metric-content">
+
+          <span class="card-label">
+            Active parcels
+          </span>
+
+          <div class="metric-value-row">
+
+            <strong>
+              {{ activeParcelCount() }}
+            </strong>
+
+            <span class="metric-unit">
+              parcels
+            </span>
+
+          </div>
+
+        </div>
+
+      </article>
+
+
+      <article class="overview-card">
+
+        <div class="metric-icon">
+          ha
+        </div>
+
+        <div class="metric-content">
+
+          <span class="card-label">
+            Active area
+          </span>
+
+          <div class="metric-value-row">
+
+            <strong>
+              {{ activeTotalArea() }}
+            </strong>
+
+            <span class="metric-unit">
+              hectares
+            </span>
+
+          </div>
+
+        </div>
+
+      </article>
+
+
+      <article class="overview-card">
+
+        <div
+          class="metric-icon sustainability-icon"
+        >
+          S
+        </div>
+
+        <div class="metric-content">
+
+          <span class="card-label">
+            Sustainability Score
+          </span>
+
+          <strong class="not-calculated">
+            Not calculated yet
+          </strong>
+
+          <span class="metric-description">
+            Sustainability assessment will be available later.
+          </span>
+
+        </div>
+
+      </article>
+
+    </div>
+
+
+    <div class="dashboard-layout">
+
+      <section class="map-card">
+
         <div class="card-header">
-            <h2>Farm summary</h2>
+
+          <div>
+
+            <span class="card-label">
+              Farm map
+            </span>
+
+            <h2>
+              Active parcels
+            </h2>
+
+          </div>
+
+
+          <span class="parcel-count">
+
+            {{ activeParcelCount() }}
+
+            {{
+              activeParcelCount() === 1
+                ? 'parcel'
+                : 'parcels'
+            }}
+
+          </span>
+
         </div>
 
-        <div class="summary-grid">
-                <div class="summary-item">
-                    <span>Total Yield</span>
-                    <strong>54.2 t</strong>
-                </div>
-                <div class="summary-item">
-                    <span>Water usage</span>
-                    <strong>54.2 t</strong>
-                </div>
-                <div class="summary-item">
-                    <span>Sustainability Score</span>
-                    <strong>76</strong>
-                </div>
-                <div class="summary-item">
-                    <span>Environmental risk</span>
-                    <strong>Low</strong>
-                </div>
+
+        @if (
+          activeParcels().length > 0
+        ) {
+
+          <app-farm-map
+            [parcels]="activeParcels()"
+            (parcelSelected)="
+              selectParcel($event)
+            "
+          />
+
+        } @else {
+
+          <div class="map-empty-state">
+
+            <div class="map-empty-icon">
+              +
+            </div>
+
+            <h3>
+              No active parcels
+            </h3>
+
+            <p>
+              Add a new parcel or reactivate
+              an inactive parcel to display it
+              on the farm map.
+            </p>
+
+            <a
+              class="primary-button empty-map-button"
+              routerLink="/parcels/new"
+            >
+              Add parcel
+            </a>
+
+          </div>
+
+        }
+
+      </section>
+
+
+      <aside class="details-card">
+
+        <div class="details-topbar">
+
+          <span class="card-label">
+            Selected parcel
+          </span>
+
+
+          @if (selectedParcel()) {
+
+            <button
+              type="button"
+              class="details-back-button"
+              (click)="clearSelectedParcel()"
+            >
+              ← All parcels
+            </button>
+
+          }
+
         </div>
-        
+
+
+        @if (
+          selectedParcel();
+          as parcel
+        ) {
+
+          <div class="selected-parcel-header">
+
+            <div>
+
+              <h2>
+                {{ parcel.name }}
+              </h2>
+
+              @if (!parcel.is_active) {
+
+                <span class="inactive-label">
+                  Inactive
+                </span>
+
+              }
+
+            </div>
+
+
+            <span class="selected-badge">
+              Selected
+            </span>
+
+          </div>
+
+
+          <div class="parcel-details">
+
+            <div class="detail-row">
+
+              <span>
+                Official area
+              </span>
+
+              <strong>
+                {{ parcel.official_area_ha }} ha
+              </strong>
+
+            </div>
+
+
+            <div class="detail-row">
+
+              <span>
+                County
+              </span>
+
+              <strong>
+                {{ parcel.county_name }}
+              </strong>
+
+            </div>
+
+
+            <div class="detail-row">
+
+              <span>
+                Status
+              </span>
+
+              <strong>
+                {{
+                  parcel.is_active
+                    ? 'Active'
+                    : 'Inactive'
+                }}
+              </strong>
+
+            </div>
+
+          </div>
+
+
+          <a
+            class="parcel-button"
+            [routerLink]="[
+              '/parcels',
+              parcel.id
+            ]"
+          >
+            View parcel details
+          </a>
+
+        } @else {
+
+          <h2>
+            No parcel selected
+          </h2>
+
+          <p class="details-description">
+            Select a parcel below or on the map
+            to view its soil, season and yield
+            simulation details.
+          </p>
+
+
+          @if (
+            currentFarm.parcels.length > 0
+          ) {
+
+            <div class="parcel-list-preview">
+
+              <span class="preview-label">
+                Farm parcels
+              </span>
+
+
+              @for (
+                parcel of currentFarm.parcels;
+                track parcel.id
+              ) {
+
+                <button
+                  type="button"
+                  class="parcel-preview"
+                  [class.inactive]="
+                    !parcel.is_active
+                  "
+                  (click)="
+                    selectParcel(parcel)
+                  "
+                >
+
+                  <div>
+
+                    <div
+                      class="parcel-preview-title"
+                    >
+
+                      <strong>
+                        {{ parcel.name }}
+                      </strong>
+
+
+                      @if (
+                        !parcel.is_active
+                      ) {
+
+                        <span
+                          class="inactive-label"
+                        >
+                          Inactive
+                        </span>
+
+                      }
+
+                    </div>
+
+
+                    <span>
+                      {{
+                        parcel.official_area_ha
+                      }}
+                      ha
+                    </span>
+
+                  </div>
+
+
+                  <span
+                    class="parcel-dot"
+                  >
+                  </span>
+
+                </button>
+
+              }
+
+            </div>
+
+          } @else {
+
+            <div class="details-placeholder">
+
+              No parcels have been added
+              to this farm yet.
+
+            </div>
+
+          }
+
+        }
+
+      </aside>
+
     </div>
-</div>
+
+  }
+
+</section>

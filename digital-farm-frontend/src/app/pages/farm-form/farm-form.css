@@ -1,0 +1,232 @@
+:host {
+  display: block;
+}
+
+.farm-form-page {
+  width: 100%;
+  max-width: 900px;
+}
+
+.page-header {
+  margin-bottom: 28px;
+}
+
+.back-button {
+  margin-bottom: 22px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #667085;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.back-button:hover {
+  color: #008f40;
+}
+
+.eyebrow,
+.section-label {
+  display: block;
+  margin-bottom: 7px;
+  color: #008f40;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.page-header h1 {
+  margin: 0;
+  color: #101828;
+  font-size: 36px;
+  letter-spacing: -0.035em;
+}
+
+.page-header p {
+  margin: 8px 0 0;
+  color: #667085;
+  font-size: 14px;
+}
+
+.form-card {
+  padding: 26px;
+  border: 1px solid #e4e7ec;
+  border-radius: 18px;
+  background: #ffffff;
+}
+
+.section-header {
+  margin-bottom: 24px;
+}
+
+.section-header h2 {
+  margin: 0;
+  color: #101828;
+  font-size: 20px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.form-field.full-width {
+  grid-column: 1 / -1;
+}
+
+.form-field label {
+  color: #344054;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.form-field input,
+.form-field select,
+.form-field textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #d0d5dd;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #101828;
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+}
+
+.form-field input,
+.form-field select {
+  height: 44px;
+  padding: 0 12px;
+}
+
+.form-field textarea {
+  padding: 12px;
+  resize: vertical;
+}
+
+.form-field input:focus,
+.form-field select:focus,
+.form-field textarea:focus {
+  border-color: #00ad4e;
+  box-shadow:
+    0 0 0 3px
+    rgba(0, 173, 78, 0.08);
+}
+
+.field-error {
+  color: #b42318;
+  font-size: 12px;
+}
+
+.form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 22px;
+}
+
+.right-actions {
+  display: flex;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.save-button,
+.cancel-button,
+.delete-button {
+  height: 42px;
+  padding: 0 16px;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.save-button {
+  border: 1px solid #00ad4e;
+  background: #00ad4e;
+  color: #ffffff;
+}
+
+.save-button:hover:not(:disabled) {
+  background: #009844;
+}
+
+.cancel-button {
+  border: 1px solid #d0d5dd;
+  background: #ffffff;
+  color: #344054;
+}
+
+.delete-button {
+  border: 1px solid #fda29b;
+  background: #ffffff;
+  color: #b42318;
+}
+
+.delete-button:hover:not(:disabled) {
+  background: #fef3f2;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.message {
+  margin-bottom: 20px;
+  padding: 13px 15px;
+  border-radius: 10px;
+}
+
+.error-message {
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #b42318;
+}
+
+.state-card {
+  padding: 22px;
+  border: 1px dashed #d0d5dd;
+  border-radius: 12px;
+  color: #667085;
+}
+
+@media (max-width: 700px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-field.full-width {
+    grid-column: auto;
+  }
+
+  .form-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .right-actions {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .right-actions button,
+  .delete-button {
+    flex: 1;
+  }
+}

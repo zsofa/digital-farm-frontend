@@ -1,0 +1,301 @@
+<section class="farm-form-page">
+
+  @if (loading()) {
+
+    <div class="state-card">
+      Loading farm...
+    </div>
+
+  } @else {
+
+    <div class="page-header">
+
+      <div>
+
+        <button
+          type="button"
+          class="back-button"
+          (click)="cancel()"
+        >
+          ← Back to dashboard
+        </button>
+
+        <span class="eyebrow">
+          Farm
+        </span>
+
+        <h1>
+          {{
+            editMode()
+              ? 'Manage farm'
+              : 'Create farm'
+          }}
+        </h1>
+
+        <p>
+          {{
+            editMode()
+              ? 'Update the basic information of your farm.'
+              : 'Enter the basic information to create a new farm.'
+          }}
+        </p>
+
+      </div>
+
+    </div>
+
+
+    @if (errorMessage()) {
+
+      <div
+        class="message error-message"
+      >
+        {{ errorMessage() }}
+      </div>
+
+    }
+
+
+    <form
+      class="farm-form"
+      [formGroup]="form"
+      (ngSubmit)="save()"
+    >
+
+      <section class="form-card">
+
+        <div class="section-header">
+
+          <span class="section-label">
+            General information
+          </span>
+
+          <h2>
+            Farm details
+          </h2>
+
+        </div>
+
+
+        <div class="form-grid">
+
+          <div
+            class="form-field full-width"
+          >
+
+            <label for="name">
+              Farm name
+            </label>
+
+            <input
+              id="name"
+              type="text"
+              formControlName="name"
+              placeholder="e.g. Green Valley Farm"
+            />
+
+            @if (
+              form.controls.name.touched &&
+              form.controls.name.invalid
+            ) {
+              <span class="field-error">
+                Farm name is required.
+              </span>
+            }
+
+          </div>
+
+
+          <div class="form-field">
+
+            <label for="county">
+              County
+            </label>
+
+            <select
+              id="county"
+              formControlName="county_name"
+            >
+
+              <option
+                value=""
+                disabled
+              >
+                Select county
+              </option>
+
+              @for (
+                county of counties;
+                track county
+              ) {
+                <option
+                  [value]="county"
+                >
+                  {{ county }}
+                </option>
+              }
+
+            </select>
+
+            @if (
+              form.controls
+                .county_name.touched &&
+              form.controls
+                .county_name.invalid
+            ) {
+              <span class="field-error">
+                County is required.
+              </span>
+            }
+
+          </div>
+
+
+          <div class="form-field">
+
+            <label for="activity">
+              Farming activity
+            </label>
+
+            <select
+              id="activity"
+              formControlName="activity_type"
+            >
+              <option
+                value="crop_production"
+              >
+                Crop production
+              </option>
+
+              <option value="livestock">
+                Livestock
+              </option>
+
+              <option value="mixed">
+                Mixed farming
+              </option>
+            </select>
+
+          </div>
+
+
+          <div class="form-field">
+
+            <label for="legalForm">
+              Legal form
+            </label>
+
+            <select
+              id="legalForm"
+              formControlName="legal_form"
+            >
+
+              <option value="">
+                Not specified
+              </option>
+
+              <option value="individual">
+                Individual
+              </option>
+
+              <option value="family_farm">
+                Family farm
+              </option>
+
+              <option value="company">
+                Company
+              </option>
+
+              <option value="other">
+                Other
+              </option>
+
+            </select>
+
+          </div>
+
+
+          <div
+            class="form-field full-width"
+          >
+
+            <label for="description">
+              Description
+            </label>
+
+            <textarea
+              id="description"
+              rows="5"
+              formControlName="description"
+              placeholder="Optional description of the farm"
+            ></textarea>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      <div class="form-actions">
+
+        @if (editMode()) {
+
+          <button
+            type="button"
+            class="delete-button"
+            [disabled]="
+              deleting() ||
+              saving()
+            "
+            (click)="deleteFarm()"
+          >
+            @if (deleting()) {
+              Deleting...
+            } @else {
+              Delete farm
+            }
+          </button>
+
+        }
+
+
+        <div class="right-actions">
+
+          <button
+            type="button"
+            class="cancel-button"
+            [disabled]="saving()"
+            (click)="cancel()"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="submit"
+            class="save-button"
+            [disabled]="
+              saving() ||
+              deleting()
+            "
+          >
+
+            @if (saving()) {
+              Saving...
+            } @else if (editMode()) {
+              Save changes
+            } @else {
+              Create farm
+            }
+
+          </button>
+
+        </div>
+
+      </div>
+
+    </form>
+
+  }
+
+</section>

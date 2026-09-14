@@ -1,0 +1,445 @@
+<section class="simulation-page">
+
+  @if (loading()) {
+
+    <div class="state-card">
+      Loading simulation results...
+    </div>
+
+  } @else if (errorMessage()) {
+
+    <div class="state-card error">
+      {{ errorMessage() }}
+    </div>
+
+  } @else if (
+    simulation();
+    as result
+  ) {
+
+    <div class="page-header">
+
+      <div>
+
+        <button
+          type="button"
+          class="back-button"
+          (click)="goBack()"
+        >
+          ← Back to season
+        </button>
+
+        <span class="eyebrow">
+          Yield simulation
+        </span>
+
+
+        <div class="title-row">
+
+          <h1>
+            Simulation
+            #{{ result.simulation_id }}
+          </h1>
+
+          <span
+            class="status-badge"
+            [class.current]="
+              result.status === 'current'
+            "
+            [class.outdated]="
+              result.status === 'outdated'
+            "
+          >
+            {{
+              formatStatus(
+                result.status
+              )
+            }}
+          </span>
+
+        </div>
+
+
+        <p>
+          {{ result.parcel.name }}
+          ·
+          {{ result.season.season_start_year }}
+          ·
+          {{ formatCrop(result.season.crop) }}
+        </p>
+
+      </div>
+
+    </div>
+
+
+    @if (
+      result.status === 'outdated'
+    ) {
+
+      <div class="outdated-message">
+
+        <div
+          class="outdated-message-content"
+        >
+
+          <strong>
+            Soil data changed
+          </strong>
+
+          <span>
+            This simulation was created using
+            an earlier soil dataset. Run a new
+            simulation to use the current parcel
+            soil data.
+          </span>
+
+        </div>
+
+      </div>
+
+    }
+
+
+    <div class="reference-card">
+
+      <div>
+
+        <span>
+          Regional recent yield
+        </span>
+
+        <strong>
+          {{
+            result.recent_yield_mean_t_ha
+          }}
+          t/ha
+        </strong>
+
+        <small>
+          Previous 3-year average for
+          {{ formatCrop(result.season.crop) }}
+          in {{ result.county_name }}.
+        </small>
+
+      </div>
+
+
+      <div>
+
+        <span>
+          Parcel area
+        </span>
+
+        <strong>
+          {{
+            result.parcel
+              .official_area_ha
+          }}
+          ha
+        </strong>
+
+        <small>
+          Official parcel area used for
+          total production estimates.
+        </small>
+
+      </div>
+
+
+      <div>
+
+        <span>
+          Soil source
+        </span>
+
+        <strong>
+          {{
+            result.soil.source === 'user'
+              ? 'User measurement'
+              : 'SoilGrids'
+          }}
+        </strong>
+
+        <small>
+          Soil values used when this
+          simulation was created.
+        </small>
+
+      </div>
+
+
+      <div>
+
+        <span>
+          Simulation run
+        </span>
+
+        <strong>
+          {{
+            result.created_at
+              | date:
+                'd MMM y, HH:mm'
+          }}
+        </strong>
+
+        <small>
+          Time when these results were
+          generated.
+        </small>
+
+      </div>
+
+    </div>
+
+
+    <div class="scenario-grid">
+
+      @if (
+        getScenario('dry_hot');
+        as scenario
+      ) {
+
+        <article class="scenario-card">
+
+          <span class="scenario-label">
+            Dry & hot
+          </span>
+
+          <h2>
+            {{
+              scenario
+                .predicted_yield_t_ha
+            }}
+            t/ha
+          </h2>
+
+          <span class="total-yield">
+            Estimated production:
+            {{
+              scenario
+                .estimated_total_t
+            }}
+            t
+          </span>
+
+          <span class="total-formula">
+            Predicted yield × official parcel area
+          </span>
+
+
+          <div class="scenario-details">
+
+            <div>
+
+              <span>
+                Temperature
+              </span>
+
+              <strong>
+                {{
+                  scenario
+                    .temperature_c
+                }}
+                °C
+              </strong>
+
+            </div>
+
+
+            <div>
+
+              <span>
+                Precipitation
+              </span>
+
+              <strong>
+                {{
+                  scenario
+                    .precipitation_mm
+                }}
+                mm
+              </strong>
+
+            </div>
+
+          </div>
+
+        </article>
+
+      }
+
+
+      @if (
+        getScenario('expected');
+        as scenario
+      ) {
+
+        <article
+          class="scenario-card expected"
+        >
+
+          <span class="scenario-label">
+            Expected
+          </span>
+
+          <h2>
+            {{
+              scenario
+                .predicted_yield_t_ha
+            }}
+            t/ha
+          </h2>
+
+          <span class="total-yield">
+            Expected production:
+            {{
+              scenario
+                .estimated_total_t
+            }}
+            t
+          </span>
+
+          <span class="total-formula">
+            Expected yield × official parcel area
+          </span>
+
+
+          <div class="scenario-details">
+
+            <div>
+
+              <span>
+                Temperature
+              </span>
+
+              <strong>
+                {{
+                  scenario
+                    .temperature_c
+                }}
+                °C
+              </strong>
+
+            </div>
+
+
+            <div>
+
+              <span>
+                Precipitation
+              </span>
+
+              <strong>
+                {{
+                  scenario
+                    .precipitation_mm
+                }}
+                mm
+              </strong>
+
+            </div>
+
+          </div>
+
+        </article>
+
+      }
+
+
+      @if (
+        getScenario('wet_cool');
+        as scenario
+      ) {
+
+        <article class="scenario-card">
+
+          <span class="scenario-label">
+            Wet & cool
+          </span>
+
+          <h2>
+            {{
+              scenario
+                .predicted_yield_t_ha
+            }}
+            t/ha
+          </h2>
+
+          <span class="total-yield">
+            Estimated production:
+            {{
+              scenario
+                .estimated_total_t
+            }}
+            t
+          </span>
+
+          <span class="total-formula">
+            Predicted yield × official parcel area
+          </span>
+
+
+          <div class="scenario-details">
+
+            <div>
+
+              <span>
+                Temperature
+              </span>
+
+              <strong>
+                {{
+                  scenario
+                    .temperature_c
+                }}
+                °C
+              </strong>
+
+            </div>
+
+
+            <div>
+
+              <span>
+                Precipitation
+              </span>
+
+              <strong>
+                {{
+                  scenario
+                    .precipitation_mm
+                }}
+                mm
+              </strong>
+
+            </div>
+
+          </div>
+
+        </article>
+
+      }
+
+    </div>
+
+
+    <div class="info-card">
+
+      <h3>
+        About these results
+      </h3>
+
+      <p>
+        These values represent potential yield
+        outcomes under different seasonal weather
+        scenarios. They should be interpreted as
+        decision-support scenarios rather than
+        deterministic weather or yield forecasts.
+      </p>
+
+    </div>
+
+  }
+
+</section>

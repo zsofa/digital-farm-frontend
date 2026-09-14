@@ -1,0 +1,460 @@
+<section class="season-form-page">
+
+  @if (loading()) {
+
+    <div class="state-card">
+      Loading growing season...
+    </div>
+
+  } @else if (
+    errorMessage() &&
+    !parcel()
+  ) {
+
+    <div class="state-card error">
+      {{ errorMessage() }}
+    </div>
+
+  } @else if (
+    parcel();
+    as currentParcel
+  ) {
+
+    <div class="page-header">
+
+      <div>
+
+        <button
+          type="button"
+          class="back-button"
+          (click)="cancel()"
+        >
+          ← Back
+        </button>
+
+        <span class="eyebrow">
+          Growing season
+        </span>
+
+        <h1>
+          {{
+            isEditMode()
+              ? 'Edit management plan'
+              : 'Add growing season'
+          }}
+        </h1>
+
+        <p>
+          {{ currentParcel.name }}
+          ·
+          {{ currentParcel.official_area_ha }} ha
+        </p>
+
+      </div>
+
+    </div>
+
+
+    @if (!currentParcel.is_active) {
+
+      <div class="inactive-message">
+
+        <strong>
+          This parcel is inactive.
+        </strong>
+
+        <span>
+          Reactivate the parcel before
+          changing its growing plan.
+        </span>
+
+      </div>
+
+    }
+
+
+    @if (errorMessage()) {
+
+      <div class="message error-message">
+        {{ errorMessage() }}
+      </div>
+
+    }
+
+
+    <form
+      [formGroup]="form"
+      (ngSubmit)="save()"
+    >
+
+      <section class="form-card">
+
+        <div class="section-heading">
+
+          <span class="section-label">
+            Season identity
+          </span>
+
+          <h2>
+            Crop and target season
+          </h2>
+
+          <p>
+            The system always selects the
+            next full growing season for
+            the selected crop.
+          </p>
+
+        </div>
+
+
+        <div class="form-grid">
+
+          <div class="form-field">
+
+            <label for="crop">
+              Crop
+            </label>
+
+            <select
+              id="crop"
+              formControlName="crop"
+            >
+
+              <option value="wheat">
+                Wheat
+              </option>
+
+              <option value="barley">
+                Barley
+              </option>
+
+              <option value="maize">
+                Maize
+              </option>
+
+            </select>
+
+
+            @if (isEditMode()) {
+
+              <span class="field-info">
+                Crop is locked after creation.
+              </span>
+
+            }
+
+          </div>
+
+
+          <div class="form-field">
+
+            <label>
+              Target growing season
+            </label>
+
+
+            <div class="target-season-value">
+
+              @if (isEditMode()) {
+
+                {{
+                  season()
+                    ?.season_start_year
+                }}
+
+              } @else if (
+                targetSeasonLoading()
+              ) {
+
+                Determining season...
+
+              } @else if (
+                targetSeason();
+                as seasonTarget
+              ) {
+
+                <strong>
+                  {{
+                    seasonTarget
+                      .season_start_year
+                  }}
+                </strong>
+
+                <span>
+                  {{
+                    formatDate(
+                      seasonTarget
+                        .start_date
+                    )
+                  }}
+                  –
+                  {{
+                    formatDate(
+                      seasonTarget
+                        .end_date
+                    )
+                  }}
+                </span>
+
+              } @else {
+
+                Not available
+
+              }
+
+            </div>
+
+
+            @if (!isEditMode()) {
+
+              <span class="field-info">
+                Automatically selected from
+                the crop and current date.
+              </span>
+
+            } @else {
+
+              <span class="field-info">
+                Target season is locked.
+              </span>
+
+            }
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      <section class="form-card">
+
+        <div class="section-heading">
+
+          <span class="section-label">
+            Management plan
+          </span>
+
+          <h2>
+            Farming configuration
+          </h2>
+
+          <p>
+            Adjust these settings to test
+            different management alternatives.
+          </p>
+
+        </div>
+
+
+        <div class="form-grid">
+
+          <div class="form-field">
+
+            <label for="strategy">
+              Farming strategy
+            </label>
+
+            <select
+              id="strategy"
+              formControlName="farming_strategy"
+            >
+
+              <option value="conventional">
+                Conventional
+              </option>
+
+              <option value="reduced">
+                Reduced
+              </option>
+
+            </select>
+
+          </div>
+
+
+          <div class="form-field">
+
+            <label for="machine-use">
+              Machine use
+            </label>
+
+            <select
+              id="machine-use"
+              formControlName="machine_use"
+            >
+
+              <option value="">
+                Not specified
+              </option>
+
+              <option value="low">
+                Low
+              </option>
+
+              <option value="medium">
+                Medium
+              </option>
+
+              <option value="high">
+                High
+              </option>
+
+            </select>
+
+          </div>
+
+
+          <div class="form-field">
+
+            <label for="fertilizer-type">
+              Fertilizer type
+            </label>
+
+            <select
+              id="fertilizer-type"
+              formControlName="fertilizer_type"
+            >
+
+              <option value="">
+                No fertilizer
+              </option>
+
+              <option value="AN">
+                AN
+              </option>
+
+              <option value="urea">
+                Urea
+              </option>
+
+              <option value="CAN">
+                CAN
+              </option>
+
+            </select>
+
+          </div>
+
+
+          <div class="form-field">
+
+            <label for="fertilizer-quantity">
+              Fertilizer quantity
+            </label>
+
+            <div class="input-with-unit">
+
+              <input
+                id="fertilizer-quantity"
+                type="number"
+                min="0"
+                step="1"
+                formControlName="fertilizer_quantity_kg_ha"
+              />
+
+              <span>
+                kg/ha
+              </span>
+
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <label class="checkbox-field">
+
+          <input
+            type="checkbox"
+            formControlName="is_irrigated"
+          />
+
+          <div>
+
+            <strong>
+              Irrigation
+            </strong>
+
+            <span>
+              This management plan includes irrigation.
+            </span>
+
+          </div>
+
+        </label>
+
+      </section>
+
+
+      @if (isEditMode()) {
+
+        <div class="decision-support-note">
+
+          <strong>
+            What-if planning
+          </strong>
+
+          <span>
+            Changing the management plan does
+            not remove previous simulation
+            results. Run a new simulation after
+            saving to compare configurations.
+          </span>
+
+        </div>
+
+      }
+
+
+      <div class="form-actions">
+
+        <button
+          type="button"
+          class="cancel-button"
+          [disabled]="saving()"
+          (click)="cancel()"
+        >
+          Cancel
+        </button>
+
+
+        <button
+          type="submit"
+          class="save-button"
+          [disabled]="
+            saving() ||
+            targetSeasonLoading() ||
+            (
+              !isEditMode() &&
+              !targetSeason()
+            ) ||
+            !currentParcel.is_active
+          "
+        >
+
+          @if (saving()) {
+
+            Saving...
+
+          } @else if (isEditMode()) {
+
+            Save management plan
+
+          } @else {
+
+            Create growing season
+
+          }
+
+        </button>
+
+      </div>
+
+    </form>
+
+  }
+
+</section>

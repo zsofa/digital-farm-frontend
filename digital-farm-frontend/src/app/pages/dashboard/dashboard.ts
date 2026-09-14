@@ -1,82 +1,141 @@
-import { Component } from '@angular/core';
-import { CommonModule }  from '@angular/common';
+import {
+  Component,
+  computed,
+  effect,
+  signal,
+} from '@angular/core';
 
-type Field = {
-  id: string
-  name: string
-  soilType: string
-  cropType: string
-  strategy: string
-  irrigation: string
-  yield: number
-  sustainability: number
-  soilHealthRisk: string
-  waterQualityRisk: string
-  carbonRisk: string
-}
+import {
+  FarmMap,
+} from '../../components/farm-map/farm-map';
+
+import {
+  ParcelSummary,
+} from '../../models/parcel.model';
+
+import {
+  FarmContextService,
+} from '../../services/farm-context.service';
+
+import {
+  RouterLink,
+} from '@angular/router';
+
 
 @Component({
   selector: 'app-dashboard',
-  imports: [CommonModule],
-  templateUrl: './dashboard.html',
-  styleUrl: './dashboard.css',
+
+  imports: [
+    FarmMap,
+    RouterLink,
+  ],
+
+  templateUrl:
+    './dashboard.html',
+
+  styleUrl:
+    './dashboard.css',
 })
 export class Dashboard {
-  soilTypes = ['Loam', 'Clay', 'Sandy', 'Silty', 'Peat', 'Chalky']
-  cropTypes = ['Wheat', 'Maize', 'Sunflower', 'Barley', 'Rapeseed', 'Soybean']
-  strategies = ['Conventional', 'Reduced Input', 'Organic', 'Precision']
-  irrigationMethods =  [
-    'Surface irrigation',
-    'Sprinkler irrigation',
-    'Drip irrigation',
-    'Centre-pivot irrigation',
-    'Manual'
-  ]
 
-  fields: Field[] = [
-    {
-      id: 'f1',
-      name: 'Field name',
-      soilType: 'Loam',
-      cropType: 'Wheat',
-      strategy: 'Precision',
-      irrigation: 'Medium',
-      yield: 6.7,
-      sustainability: 75,
-      soilHealthRisk: '',
-      waterQualityRisk: '',
-      carbonRisk: ''
-    },
-    {
-      id: 'f2',
-      name: 'Field name2',
-      soilType: 'Clay',
-      cropType: 'Chickpeas',
-      strategy: 'Precision',
-      irrigation: 'Low',
-      yield: 6.8,
-      sustainability: 77,
-      soilHealthRisk: '',
-      waterQualityRisk: '',
-      carbonRisk: ''
-    }
-  ];
+  readonly farm;
 
-  selectedField: Field = this.fields[0];
+  readonly loading;
 
-  constructor() {
+  readonly errorMessage;
+
+
+  readonly selectedParcel =
+    signal<ParcelSummary | null>(
+      null
+    );
+
+
+  readonly activeParcels =
+    computed(() => {
+
+      const farm =
+        this.farm();
+
+      if (!farm) {
+        return [];
+      }
+
+      return farm.parcels.filter(
+        parcel =>
+          parcel.is_active
+      );
+    });
+
+
+  readonly activeParcelCount =
+    computed(
+      () =>
+        this.activeParcels().length
+    );
+
+
+  readonly activeTotalArea =
+    computed(() => {
+
+      const total =
+        this.activeParcels()
+          .reduce(
+            (
+              sum,
+              parcel,
+            ) =>
+              sum +
+              parcel.official_area_ha,
+            0
+          );
+
+      return Math.round(
+        total * 1000
+      ) / 1000;
+    });
+
+
+  constructor(
+    private readonly farmContext:
+      FarmContextService,
+  ) {
+
+    this.farm =
+      this.farmContext.selectedFarm;
+
+    this.loading =
+      this.farmContext.loading;
+
+    this.errorMessage =
+      this.farmContext.errorMessage;
+
+
+    effect(() => {
+
+      this.farm();
+
+      this.selectedParcel.set(
+        null
+      );
+    });
   }
 
-  selectField(field: Field): void {
-    this.selectedField = field;
+
+  selectParcel(
+    parcel: ParcelSummary,
+  ): void {
+
+    this.selectedParcel.set(
+      parcel
+    );
   }
 
-  onFieldChange(): void {
-    this.selectField;
-  }
 
-  private updateFieldInList(): void {
-    this.fields = this.fields.map( field => field.id === this.selectedField.id ? { ...this.selectedField} : field)
-  }
+  clearSelectedParcel(): void {
 
+    this.selectedParcel.set(
+      null
+    );
+  }
 }
