@@ -1,24 +1,30 @@
 import {
   Component,
   computed,
+  effect,
   inject,
   signal,
 } from '@angular/core';
 
-import { CommonModule } from '@angular/common';
-import { ActivatedRoute } from '@angular/router';
+import {
+  CommonModule,
+} from '@angular/common';
 
 import {
   catchError,
   finalize,
   forkJoin,
   of,
-  switchMap,
 } from 'rxjs';
 
 import {
-  SustainabilityService,
-} from '../../services/sustainability.service';
+  FarmDetails,
+} from '../../models/farm.model';
+
+import {
+  ParcelDetails,
+  ParcelSeason,
+} from '../../models/parcel.model';
 
 import {
   FarmSustainabilityResult,
@@ -26,10 +32,16 @@ import {
 } from '../../models/sustainability.model';
 
 import {
-  ParcelDetails,
-  ParcelSeason,
-} from '../../models/parcel.model';
+  FarmContextService,
+} from '../../services/farm-context.service';
 
+import {
+  ParcelService,
+} from '../../services/parcel.service';
+
+import {
+  SustainabilityService,
+} from '../../services/sustainability.service';
 
 
 interface ParcelPlanGroup {
@@ -40,25 +52,37 @@ interface ParcelPlanGroup {
 
 @Component({
   selector: 'app-sustainability',
+
   standalone: true,
+
   imports: [
     CommonModule,
   ],
-  templateUrl: './sustainability.html',
-  styleUrl: './sustainability.css',
+
+  templateUrl:
+    './sustainability.html',
+
+  styleUrl:
+    './sustainability.css',
 })
 export class Sustainability {
 
-  private readonly route = inject(
-    ActivatedRoute,
-  );
+  private readonly farmContext =
+    inject(FarmContextService);
+
+  private readonly parcelService =
+    inject(ParcelService);
 
   private readonly sustainabilityService =
     inject(SustainabilityService);
 
 
-  readonly farmId =
-    signal<number | null>(null);
+  readonly farm =
+    this.farmContext.selectedFarm;
+
+  readonly farmLoading =
+    this.farmContext.loading;
+
 
   readonly loadingPlans =
     signal(true);
@@ -83,113 +107,106 @@ export class Sustainability {
     );
 
 
-  readonly selectedIds = computed(
-    () => {
+  readonly selectedIds =
+    computed(() => {
+
       return Object.values(
         this.selectedSeasonIds(),
       ).filter(
         (
           id,
-        ): id is number => id !== null,
+        ): id is number =>
+          id !== null,
       );
-    },
-  );
+    });
 
 
   constructor() {
-    this.loadFarmFromRoute();
+
+    effect(() => {
+
+      const loading =
+        this.farmLoading();
+
+      const farm =
+        this.farm();
+
+      if (loading) {
+        this.loadingPlans.set(true);
+        return;
+      }
+
+      if (!farm) {
+
+        this.resetPage();
+
+        this.loadingPlans.set(false);
+
+        this.errorMessage.set(
+          'No farm available.',
+        );
+
+        return;
+      }
+
+      this.loadPlans(farm);
+    });
   }
 
 
-  private loadFarmFromRoute(): void {
-    const routeFarmId =
-      this.route.snapshot.paramMap.get(
-        'farmId',
-      );
+  private resetPage(): void {
 
-    const queryFarmId =
-      this.route.snapshot.queryParamMap.get(
-        'farmId',
-      );
+    this.planGroups.set([]);
 
-    const rawFarmId =
-      routeFarmId ?? queryFarmId;
+    this.selectedSeasonIds.set({});
 
-    if (!rawFarmId) {
-      this.loadingPlans.set(false);
+    this.farmResult.set(null);
 
-      this.errorMessage.set(
-        'No farm selected.',
-      );
-
-      return;
-    }
-
-    const farmId = Number(rawFarmId);
-
-    if (
-      !Number.isInteger(farmId)
-      || farmId <= 0
-    ) {
-      this.loadingPlans.set(false);
-
-      this.errorMessage.set(
-        'Invalid farm selection.',
-      );
-
-      return;
-    }
-
-    this.farmId.set(farmId);
-
-    this.loadPlans();
+    this.errorMessage.set(null);
   }
 
 
-  private loadPlans(): void {
-    const farmId = this.farmId();
+  private loadPlans(
+    farm: FarmDetails,
+  ): void {
 
-    if (farmId === null) {
-      return;
-    }
+    this.resetPage();
 
     this.loadingPlans.set(true);
-    this.errorMessage.set(null);
 
-    this.sustainabilityService
-      .getFarmParcels(farmId)
+
+    const activeParcels =
+      farm.parcels.filter(
+        parcel =>
+          parcel.is_active,
+      );
+
+
+    if (
+      activeParcels.length === 0
+    ) {
+
+      this.buildPlanGroups([]);
+
+      this.loadingPlans.set(false);
+
+      return;
+    }
+
+
+    forkJoin(
+      activeParcels.map(
+        parcel =>
+          this.parcelService
+            .getParcel(
+              parcel.id,
+            ),
+      ),
+    )
       .pipe(
-        switchMap(
-          parcels => {
-
-            const activeParcels =
-              parcels.filter(
-                parcel =>
-                  parcel.is_active,
-              );
-
-            if (
-              activeParcels.length === 0
-            ) {
-              return of(
-                [] as ParcelDetails[],
-              );
-            }
-
-            return forkJoin(
-              activeParcels.map(
-                parcel =>
-                  this.sustainabilityService
-                    .getParcelDetails(
-                      parcel.id,
-                    ),
-              ),
-            );
-          },
-        ),
-
         catchError(
           error => {
+
             this.errorMessage.set(
               error?.error?.error
               ?? 'Could not load sustainability data.',
@@ -209,6 +226,13 @@ export class Sustainability {
       )
       .subscribe(
         parcels => {
+
+          if (
+            this.errorMessage()
+          ) {
+            return;
+          }
+
           this.buildPlanGroups(
             parcels,
           );
@@ -221,58 +245,78 @@ export class Sustainability {
     parcels: ParcelDetails[],
   ): void {
 
-    const groups: ParcelPlanGroup[] =
-      parcels.map(
-        parcel => ({
-          parcel,
-          seasons: [
-            ...parcel.seasons,
-          ],
-        }),
-      );
+    const groups:
+      ParcelPlanGroup[] =
+        parcels.map(
+          parcel => ({
+            parcel,
 
-    this.planGroups.set(groups);
+            seasons: [
+              ...parcel.seasons,
+            ],
+          }),
+        );
+
+
+    this.planGroups.set(
+      groups,
+    );
+
 
     const initialSelection:
-      Record<number, number | null> = {};
+      Record<number, number | null> =
+        {};
 
-    for (const group of groups) {
+
+    for (
+      const group of groups
+    ) {
 
       if (
         group.seasons.length === 1
       ) {
+
         initialSelection[
           group.parcel.id
-        ] = group.seasons[0].id;
+        ] =
+          group.seasons[0].id;
 
       } else {
+
         initialSelection[
           group.parcel.id
         ] = null;
       }
     }
 
+
     this.selectedSeasonIds.set(
       initialSelection,
     );
+
 
     this.calculate();
   }
 
 
   calculate(): void {
-    const farmId = this.farmId();
 
-    if (farmId === null) {
+    const farm =
+      this.farm();
+
+    if (!farm) {
       return;
     }
 
+
     this.calculating.set(true);
+
     this.errorMessage.set(null);
+
 
     this.sustainabilityService
       .calculateFarm(
-        farmId,
+        farm.id,
         this.selectedIds(),
       )
       .pipe(
@@ -283,11 +327,16 @@ export class Sustainability {
         ),
       )
       .subscribe({
+
         next: result => {
-          this.farmResult.set(result);
+
+          this.farmResult.set(
+            result,
+          );
         },
 
         error: error => {
+
           this.errorMessage.set(
             error?.error?.error
             ?? 'Could not calculate sustainability.',
@@ -298,30 +347,24 @@ export class Sustainability {
 
 
   onPlanChange(
-    parcelId: number,
-    event: Event,
-  ): void {
+  parcelId: number,
+  event: Event,
+): void {
+  const select = event.target as HTMLSelectElement;
 
-    const select =
-      event.target as HTMLSelectElement;
+  const seasonId = select.value
+    ? Number(select.value)
+    : null;
 
-    const value =
-      select.value;
+  this.selectedSeasonIds.update(
+    current => ({
+      ...current,
+      [parcelId]: seasonId,
+    }),
+  );
 
-    const seasonId =
-      value
-        ? Number(value)
-        : null;
-
-    this.selectedSeasonIds.update(
-      current => ({
-        ...current,
-        [parcelId]: seasonId,
-      }),
-    );
-
-    this.calculate();
-  }
+  this.calculate();
+}
 
 
   selectedPlanId(
@@ -331,14 +374,17 @@ export class Sustainability {
     return (
       this.selectedSeasonIds()[
         parcelId
-      ] ?? null
+      ]
+      ?? null
     );
   }
 
 
   resultForParcel(
     parcelId: number,
-  ): ParcelSustainabilityResult | null {
+  ):
+    ParcelSustainabilityResult
+    | null {
 
     return (
       this.farmResult()
@@ -346,7 +392,7 @@ export class Sustainability {
         .find(
           result =>
             result.parcel_id
-            === parcelId,
+              === parcelId,
         )
       ?? null
     );
@@ -359,12 +405,22 @@ export class Sustainability {
 
     const labels:
       Record<string, string> = {
-        wheat: 'Wheat',
-        barley: 'Barley',
-        maize: 'Maize',
+
+        wheat:
+          'Wheat',
+
+        barley:
+          'Barley',
+
+        maize:
+          'Maize',
       };
 
-    return labels[crop] ?? crop;
+
+    return (
+      labels[crop]
+      ?? crop
+    );
   }
 
 
@@ -374,12 +430,14 @@ export class Sustainability {
 
     const labels:
       Record<string, string> = {
+
         conventional:
           'Conventional',
 
         reduced:
           'Reduced',
       };
+
 
     return (
       labels[strategy]
@@ -394,6 +452,7 @@ export class Sustainability {
 
     const labels:
       Record<string, string> = {
+
         machine_use:
           'Machine use',
 
@@ -409,6 +468,7 @@ export class Sustainability {
         soil_clay_pct:
           'Clay content',
       };
+
 
     return (
       labels[input]

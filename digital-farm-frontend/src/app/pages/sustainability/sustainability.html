@@ -1,532 +1,573 @@
 <section class="sustainability-page">
 
-  <header class="page-header">
-    <div>
-      <span class="eyebrow">
-        Sustainability
-      </span>
+    <header class="page-header">
+        <div>
+            <span class="eyebrow">
+                Sustainability
+            </span>
 
-      <h1>
-        Farm sustainability
-      </h1>
+            <h1>
+                Farm sustainability
+            </h1>
 
-      <p>
-        Evaluate the environmental performance
-        of the selected farm plans.
-      </p>
-    </div>
+            <p>
+                Evaluate the environmental performance
+                of the selected farm plans.
+            </p>
+        </div>
 
-    @if (farmResult(); as result) {
-      <span
-        class="calculation-status"
-        [class.partial]="
+        @if (farmResult(); as result) {
+        <span class="calculation-status" [class.partial]="
           result.calculation_status
           === 'partial'
-        "
-        [class.unavailable]="
+        " [class.unavailable]="
           result.calculation_status
           === 'unavailable'
-        "
-      >
-        {{
-          result.calculation_status
+        ">
+            {{
+            result.calculation_status
             === 'complete'
             ? 'Complete'
             : result.calculation_status
-              === 'partial'
-              ? 'Partial data'
-              : 'Unavailable'
-        }}
-      </span>
-    }
-  </header>
+            === 'partial'
+            ? 'Partial data'
+            : 'Unavailable'
+            }}
+        </span>
+        }
+    </header>
 
 
-  @if (loadingPlans()) {
+    @if (loadingPlans()) {
 
     <div class="state-card">
-      Loading sustainability data...
+        Loading sustainability data...
     </div>
 
-  } @else if (errorMessage()) {
+    } @else if (errorMessage()) {
 
     <div class="state-card error">
-      {{ errorMessage() }}
+        {{ errorMessage() }}
     </div>
 
-  } @else {
+    } @else {
 
     @if (farmResult(); as result) {
 
-      @if (
-        result.calculation_status
-        === 'partial'
-      ) {
-        <div class="notice-card">
-          <strong>
+    @if (
+    result.calculation_status
+    === 'partial'
+    ) {
+    <div class="notice-card">
+        <strong>
             Sustainability is based on partial data.
-          </strong>
+        </strong>
 
-          <span>
+        <span>
             Some parcels have an incomplete
             management plan or no selected
             growing season.
-          </span>
-        </div>
-      }
+        </span>
+    </div>
+    }
 
 
-      <div class="kpi-grid">
+    <div class="kpi-grid">
 
         <article class="kpi-card primary">
-          <span class="kpi-label">
-            Sustainability Score
-          </span>
-
-          <div class="kpi-value">
-            {{
-              result.scores
-                ?.sustainability_score_100
-              ?? '—'
-            }}
-          </div>
-
-          <span class="kpi-unit">
-            / 100
-          </span>
-
-          <p>
-            Overall environmental
-            sustainability performance.
-          </p>
-        </article>
-
-
-        <article class="kpi-card">
-          <span class="kpi-label">
-            Nitrogen Score
-          </span>
-
-          <div class="kpi-value">
-            {{
-              result.scores
-                ?.nitrogen_score_100
-              ?? '—'
-            }}
-          </div>
-
-          <span class="kpi-unit">
-            / 100
-          </span>
-
-          <p>
-            Nitrogen input and nutrient
-            balance performance.
-          </p>
-        </article>
-
-
-        <article class="kpi-card">
-          <span class="kpi-label">
-            Soil Health Score
-          </span>
-
-          <div class="kpi-value">
-            {{
-              result.scores
-                ?.soil_health_score_100
-              ?? '—'
-            }}
-          </div>
-
-          <span class="kpi-unit">
-            / 100
-          </span>
-
-          <p>
-            Soil condition and management
-            quality.
-          </p>
-        </article>
-
-
-        <article class="kpi-card">
-          <span class="kpi-label">
-            GHG Score
-          </span>
-
-          <div class="kpi-value">
-            {{
-              result.scores
-                ?.ghg_score_100
-              ?? '—'
-            }}
-          </div>
-
-          <span class="kpi-unit">
-            / 100
-          </span>
-
-          <p>
-            Fertilizer and machinery
-            emission performance.
-          </p>
-        </article>
-
-      </div>
-
-
-      <section class="content-card">
-
-        <div class="section-header">
-          <div>
-            <span class="section-label">
-              Planning
+            <span class="kpi-label">
+                Sustainability Score
             </span>
 
-            <h2>
-              Plans used in calculation
-            </h2>
+            <div class="kpi-value">
+                {{
+                result.scores
+                ?.sustainability_score_100
+                ?? '—'
+                }}
+            </div>
+
+            <span class="kpi-unit">
+                / 100
+            </span>
 
             <p>
-              Select one growing season plan
-              for each parcel.
+                Overall environmental
+                sustainability performance.
             </p>
-          </div>
+        </article>
 
-          @if (calculating()) {
-            <span class="updating-label">
-              Updating scores...
+
+        <article class="kpi-card">
+            <span class="kpi-label">
+                Nitrogen Score
             </span>
-          }
+
+            <div class="kpi-value">
+                {{
+                result.scores
+                ?.nitrogen_score_100
+                ?? '—'
+                }}
+            </div>
+
+            <span class="kpi-unit">
+                / 100
+            </span>
+
+            <p>
+                Nitrogen input and nutrient
+                balance performance.
+            </p>
+        </article>
+
+
+        <article class="kpi-card">
+            <span class="kpi-label">
+                Soil Health Score
+            </span>
+
+            <div class="kpi-value">
+                {{
+                result.scores
+                ?.soil_health_score_100
+                ?? '—'
+                }}
+            </div>
+
+            <span class="kpi-unit">
+                / 100
+            </span>
+
+            <p>
+                Soil condition and management
+                quality.
+            </p>
+        </article>
+
+
+        <article class="kpi-card">
+            <span class="kpi-label">
+                GHG Score
+            </span>
+
+            <div class="kpi-value">
+                {{
+                result.scores
+                ?.ghg_score_100
+                ?? '—'
+                }}
+            </div>
+
+            <span class="kpi-unit">
+                / 100
+            </span>
+
+            <p>
+                Fertilizer and machinery
+                emission performance.
+            </p>
+        </article>
+
+    </div>
+
+
+    <section class="content-card">
+
+        <div class="section-header">
+            <div>
+                <span class="section-label">
+                    Planning
+                </span>
+
+                <h2>
+                    Plans used in calculation
+                </h2>
+
+                <p>
+                    Select one growing season plan
+                    for each parcel.
+                </p>
+            </div>
+
+            @if (calculating()) {
+            <span class="updating-label">
+                Updating scores...
+            </span>
+            }
         </div>
 
 
         @if (
-          planGroups().length === 0
+        planGroups().length === 0
         ) {
 
-          <div class="empty-state">
+        <div class="empty-state">
             <strong>
-              No active parcels available.
+                No active parcels available.
             </strong>
 
             <span>
-              Add an active parcel and a
-              growing season to calculate
-              sustainability.
+                Add an active parcel and a
+                growing season to calculate
+                sustainability.
             </span>
-          </div>
+        </div>
 
         } @else {
 
-          <div class="plan-list">
+        <div class="plan-list">
 
             @for (
-              group of planGroups();
-              track group.parcel.id
+            group of planGroups();
+            track group.parcel.id
             ) {
 
-              <article class="plan-row">
+            <article class="plan-row">
 
                 <div class="parcel-info">
-                  <strong>
-                    {{ group.parcel.name }}
-                  </strong>
+                    <strong>
+                        {{ group.parcel.name }}
+                    </strong>
 
-                  <span>
-                    {{
-                      group.parcel
+                    <span>
+                        {{
+                        group.parcel
                         .official_area_ha
-                    }}
-                    ha
-                  </span>
+                        }}
+                        ha
+                    </span>
                 </div>
 
 
                 <div class="plan-selection">
 
-                  @if (
+                    @if (
                     group.seasons.length
                     === 0
-                  ) {
+                    ) {
 
-                    <span
-                      class="plan-status warning"
-                    >
-                      No growing season
+                    <span class="plan-status warning">
+                        No growing season
                     </span>
 
-                  } @else if (
+                    } @else if (
                     group.seasons.length
                     === 1
-                  ) {
+                    ) {
 
                     <div class="single-plan">
-                      <strong>
-                        {{
-                          formatCrop(
+                        <strong>
+                            {{
+                            formatCrop(
                             group.seasons[0]
-                              .crop
-                          )
-                        }}
-                      </strong>
+                            .crop
+                            )
+                            }}
+                        </strong>
 
-                      <span>
-                        {{
-                          formatStrategy(
+                        <span>
+                            {{
+                            formatStrategy(
                             group.seasons[0]
-                              .farming_strategy
-                          )
-                        }}
-                      </span>
+                            .farming_strategy
+                            )
+                            }}
+                        </span>
                     </div>
 
-                  } @else {
+                    } @else {
 
-                    <label
-                      class="plan-select-wrapper"
-                    >
-                      <span>
-                        Plan
-                      </span>
+                    <label class="plan-select-wrapper">
+                        <span>
+                            Plan
+                        </span>
 
-                      <select
-                        [value]="
+                        <select [value]="
                           selectedPlanId(
                             group.parcel.id
                           ) ?? ''
-                        "
-                        (change)="
+                        " (change)="
                           onPlanChange(
                             group.parcel.id,
                             $event
                           )
-                        "
-                      >
+                        ">
 
-                        <option value="">
-                          Choose a plan
-                        </option>
+                            <option value="">
+                                Choose a plan
+                            </option>
 
-                        @for (
-                          season
+                            @for (
+                            season
                             of group.seasons;
-                          track season.id
-                        ) {
+                            track season.id
+                            ) {
 
-                          <option
-                            [value]="season.id"
-                          >
-                            {{
-                              formatCrop(
+                            <option [value]="season.id">
+                                {{
+                                formatCrop(
                                 season.crop
-                              )
-                            }}
-                            ·
-                            {{
-                              formatStrategy(
+                                )
+                                }}
+                                ·
+                                {{
+                                formatStrategy(
                                 season
-                                  .farming_strategy
-                              )
-                            }}
-                          </option>
+                                .farming_strategy
+                                )
+                                }}
+                            </option>
 
-                        }
+                            }
 
-                      </select>
+                        </select>
                     </label>
 
-                  }
+                    }
 
                 </div>
 
 
                 <div class="plan-result">
 
-                  @if (
+                    @if (
                     resultForParcel(
-                      group.parcel.id
+                    group.parcel.id
                     );
                     as parcelResult
-                  ) {
-
-                    @if (
-                      parcelResult
-                        .calculation_status
-                      === 'complete'
                     ) {
 
-                      <div class="parcel-score">
-                        <strong>
-                          {{
-                            parcelResult
-                              .scores
-                              ?.sustainability_score_100
-                          }}
-                        </strong>
+                    @if (
+                    parcelResult
+                    .calculation_status
+                    === 'complete'
+                    ) {
 
-                        <span>
-                          Sustainability
-                        </span>
-                      </div>
+                    <div class="parcel-scores">
+
+                        <div class="score-item overall">
+                            <span>
+                                Sustainability
+                            </span>
+
+                            <strong>
+                                {{
+                                parcelResult
+                                .scores
+                                ?.sustainability_score_100
+                                ?? '—'
+                                }}
+                            </strong>
+                        </div>
+
+
+                        <div class="score-item">
+                            <span>
+                                Nitrogen
+                            </span>
+
+                            <strong>
+                                {{
+                                parcelResult
+                                .scores
+                                ?.nitrogen_score_100
+                                ?? '—'
+                                }}
+                            </strong>
+                        </div>
+
+
+                        <div class="score-item">
+                            <span>
+                                Soil
+                            </span>
+
+                            <strong>
+                                {{
+                                parcelResult
+                                .scores
+                                ?.soil_health_score_100
+                                ?? '—'
+                                }}
+                            </strong>
+                        </div>
+
+
+                        <div class="score-item">
+                            <span>
+                                GHG
+                            </span>
+
+                            <strong>
+                                {{
+                                parcelResult
+                                .scores
+                                ?.ghg_score_100
+                                ?? '—'
+                                }}
+                            </strong>
+                        </div>
+
+                    </div>
 
                     } @else {
 
-                      <div
-                        class="incomplete-result"
-                      >
+                    <div class="incomplete-result">
+
                         <strong>
-                          Incomplete
+                            Incomplete
                         </strong>
 
                         @if (
-                          parcelResult
-                            .missing_inputs
-                            ?.length
+                        parcelResult
+                        .missing_inputs
+                        ?.length
                         ) {
 
-                          <span>
+                        <span>
                             Missing:
+
                             @for (
-                              input
-                                of parcelResult
-                                  .missing_inputs;
-                              track input
+                            input
+                            of parcelResult
+                            .missing_inputs;
+                            track input
                             ) {
-                              {{
-                                formatMissingInput(
-                                  input
-                                )
-                              }}
+
+                            {{
+                            formatMissingInput(
+                            input
+                            )
+                            }}
+
                             }
-                          </span>
+                        </span>
 
                         }
-                      </div>
+
+                    </div>
 
                     }
 
-                  } @else if (
+                    } @else if (
                     group.seasons.length > 1
                     && selectedPlanId(
-                      group.parcel.id
+                    group.parcel.id
                     ) === null
-                  ) {
+                    ) {
 
-                    <span
-                      class="plan-status select"
-                    >
-                      Select a plan
+                    <span class="plan-status select">
+                        Select a plan
                     </span>
 
-                  }
+                    }
 
                 </div>
 
-              </article>
+            </article>
 
             }
 
-          </div>
+        </div>
 
         }
 
-      </section>
+    </section>
 
 
-      <section class="content-card summary-card">
+    <section class="content-card summary-card">
 
         <div class="section-header">
-          <div>
-            <span class="section-label">
-              Calculation coverage
-            </span>
+            <div>
+                <span class="section-label">
+                    Calculation coverage
+                </span>
 
-            <h2>
-              Farm coverage
-            </h2>
-          </div>
+                <h2>
+                    Farm coverage
+                </h2>
+            </div>
         </div>
 
         <div class="coverage-grid">
 
-          <div>
-            <span>
-              Active parcels
-            </span>
+            <div>
+                <span>
+                    Active parcels
+                </span>
 
-            <strong>
-              {{
-                result.summary
-                  .active_parcel_count
-              }}
-            </strong>
-          </div>
-
-
-          <div>
-            <span>
-              Selected plans
-            </span>
-
-            <strong>
-              {{
-                result.summary
-                  .selected_season_count
-              }}
-            </strong>
-          </div>
+                <strong>
+                    {{
+                    result.summary
+                    .active_parcel_count
+                    }}
+                </strong>
+            </div>
 
 
-          <div>
-            <span>
-              Complete
-            </span>
+            <div>
+                <span>
+                    Selected plans
+                </span>
 
-            <strong>
-              {{
-                result.summary
-                  .complete_season_count
-              }}
-            </strong>
-          </div>
-
-
-          <div>
-            <span>
-              Incomplete
-            </span>
-
-            <strong>
-              {{
-                result.summary
-                  .incomplete_season_count
-              }}
-            </strong>
-          </div>
+                <strong>
+                    {{
+                    result.summary
+                    .selected_season_count
+                    }}
+                </strong>
+            </div>
 
 
-          <div>
-            <span>
-              Included area
-            </span>
+            <div>
+                <span>
+                    Complete
+                </span>
 
-            <strong>
-              {{
-                result.summary
-                  .weighted_area_sum_ha
-              }}
-              ha
-            </strong>
-          </div>
+                <strong>
+                    {{
+                    result.summary
+                    .complete_season_count
+                    }}
+                </strong>
+            </div>
+
+
+            <div>
+                <span>
+                    Incomplete
+                </span>
+
+                <strong>
+                    {{
+                    result.summary
+                    .incomplete_season_count
+                    }}
+                </strong>
+            </div>
+
+
+            <div>
+                <span>
+                    Included area
+                </span>
+
+                <strong>
+                    {{
+                    result.summary
+                    .weighted_area_sum_ha
+                    }}
+                    ha
+                </strong>
+            </div>
 
         </div>
 
-      </section>
+    </section>
 
     }
 
-  }
+    }
 
 </section>
