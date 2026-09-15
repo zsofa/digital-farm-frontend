@@ -27,7 +27,9 @@ import {
 } from '../../models/parcel.model';
 
 import {
+  CompleteParcelSeasonSustainabilityResult,
   FarmSustainabilityResult,
+  ParcelSeasonSustainabilityResult,
   ParcelSustainabilityResult,
 } from '../../models/sustainability.model';
 
@@ -44,9 +46,31 @@ import {
 } from '../../services/sustainability.service';
 
 
+type SustainabilityTab =
+  | 'overview'
+  | 'nitrogen'
+  | 'soil'
+  | 'ghg';
+
+
 interface ParcelPlanGroup {
-  parcel: ParcelDetails;
-  seasons: ParcelSeason[];
+  parcel:
+    ParcelDetails;
+
+  seasons:
+    ParcelSeason[];
+}
+
+
+function isCompleteDetailedResult(
+  result:
+    ParcelSeasonSustainabilityResult,
+): result is CompleteParcelSeasonSustainabilityResult {
+
+  return (
+    result.calculation_status
+    === 'complete'
+  );
 }
 
 
@@ -77,11 +101,22 @@ export class Sustainability {
     inject(SustainabilityService);
 
 
+  private calculationRequestVersion = 0;
+
+  private detailRequestVersion = 0;
+
+
   readonly farm =
     this.farmContext.selectedFarm;
 
   readonly farmLoading =
     this.farmContext.loading;
+
+
+  readonly activeTab =
+    signal<SustainabilityTab>(
+      'overview',
+    );
 
 
   readonly loadingPlans =
@@ -90,16 +125,35 @@ export class Sustainability {
   readonly calculating =
     signal(false);
 
+  readonly loadingDetails =
+    signal(false);
+
+
   readonly errorMessage =
-    signal<string | null>(null);
+    signal<string | null>(
+      null,
+    );
+
+  readonly analysisErrorMessage =
+    signal<string | null>(
+      null,
+    );
+
 
   readonly planGroups =
-    signal<ParcelPlanGroup[]>([]);
+    signal<ParcelPlanGroup[]>(
+      [],
+    );
+
 
   readonly selectedSeasonIds =
-    signal<Record<number, number | null>>(
-      {},
-    );
+    signal<
+      Record<
+        number,
+        number | null
+      >
+    >({});
+
 
   readonly farmResult =
     signal<FarmSustainabilityResult | null>(
@@ -107,17 +161,54 @@ export class Sustainability {
     );
 
 
+  readonly detailedResults =
+    signal<
+      ParcelSeasonSustainabilityResult[]
+    >([]);
+
+
   readonly selectedIds =
     computed(() => {
 
-      return Object.values(
-        this.selectedSeasonIds(),
-      ).filter(
-        (
-          id,
-        ): id is number =>
-          id !== null,
-      );
+      return this.planGroups()
+        .map(
+          group =>
+            this.selectedSeasonIds()[
+              group.parcel.id
+            ],
+        )
+        .filter(
+          (
+            id,
+          ): id is number =>
+            id !== null
+            && id !== undefined,
+        );
+    });
+
+
+  readonly completeDetailedResults =
+    computed<
+      CompleteParcelSeasonSustainabilityResult[]
+    >(() => {
+
+      return this.detailedResults()
+        .filter(
+          isCompleteDetailedResult,
+        );
+    });
+
+
+  readonly incompleteDetailedCount =
+    computed(() => {
+
+      return this.detailedResults()
+        .filter(
+          result =>
+            result.calculation_status
+            === 'incomplete',
+        )
+        .length;
     });
 
 
@@ -131,16 +222,24 @@ export class Sustainability {
       const farm =
         this.farm();
 
+
       if (loading) {
-        this.loadingPlans.set(true);
+
+        this.loadingPlans.set(
+          true,
+        );
+
         return;
       }
+
 
       if (!farm) {
 
         this.resetPage();
 
-        this.loadingPlans.set(false);
+        this.loadingPlans.set(
+          false,
+        );
 
         this.errorMessage.set(
           'No farm available.',
@@ -149,20 +248,47 @@ export class Sustainability {
         return;
       }
 
-      this.loadPlans(farm);
+
+      this.loadPlans(
+        farm,
+      );
     });
+  }
+
+
+  setActiveTab(
+    tab: SustainabilityTab,
+  ): void {
+
+    this.activeTab.set(
+      tab,
+    );
   }
 
 
   private resetPage(): void {
 
+    this.calculationRequestVersion += 1;
+
+    this.detailRequestVersion += 1;
+
     this.planGroups.set([]);
 
     this.selectedSeasonIds.set({});
 
-    this.farmResult.set(null);
+    this.farmResult.set(
+      null,
+    );
 
-    this.errorMessage.set(null);
+    this.detailedResults.set([]);
+
+    this.errorMessage.set(
+      null,
+    );
+
+    this.analysisErrorMessage.set(
+      null,
+    );
   }
 
 
@@ -172,7 +298,9 @@ export class Sustainability {
 
     this.resetPage();
 
-    this.loadingPlans.set(true);
+    this.loadingPlans.set(
+      true,
+    );
 
 
     const activeParcels =
@@ -186,9 +314,13 @@ export class Sustainability {
       activeParcels.length === 0
     ) {
 
-      this.buildPlanGroups([]);
+      this.buildPlanGroups(
+        [],
+      );
 
-      this.loadingPlans.set(false);
+      this.loadingPlans.set(
+        false,
+      );
 
       return;
     }
@@ -220,7 +352,10 @@ export class Sustainability {
 
         finalize(
           () => {
-            this.loadingPlans.set(false);
+
+            this.loadingPlans.set(
+              false,
+            );
           },
         ),
       )
@@ -232,6 +367,7 @@ export class Sustainability {
           ) {
             return;
           }
+
 
           this.buildPlanGroups(
             parcels,
@@ -264,29 +400,24 @@ export class Sustainability {
 
 
     const initialSelection:
-      Record<number, number | null> =
-        {};
+      Record<
+        number,
+        number | null
+      > = {};
 
 
     for (
-      const group of groups
+      const group
+      of groups
     ) {
 
-      if (
-        group.seasons.length === 1
-      ) {
-
-        initialSelection[
-          group.parcel.id
-        ] =
-          group.seasons[0].id;
-
-      } else {
-
-        initialSelection[
-          group.parcel.id
-        ] = null;
-      }
+      initialSelection[
+        group.parcel.id
+      ] =
+        group.seasons.length
+        === 1
+          ? group.seasons[0].id
+          : null;
     }
 
 
@@ -304,25 +435,51 @@ export class Sustainability {
     const farm =
       this.farm();
 
+
     if (!farm) {
       return;
     }
 
 
-    this.calculating.set(true);
+    const selectedIds =
+      this.selectedIds();
 
-    this.errorMessage.set(null);
+
+    const requestVersion =
+      ++this.calculationRequestVersion;
+
+
+    this.calculating.set(
+      true,
+    );
+
+    this.errorMessage.set(
+      null,
+    );
+
+    this.analysisErrorMessage.set(
+      null,
+    );
 
 
     this.sustainabilityService
       .calculateFarm(
         farm.id,
-        this.selectedIds(),
+        selectedIds,
       )
       .pipe(
         finalize(
           () => {
-            this.calculating.set(false);
+
+            if (
+              requestVersion
+              === this.calculationRequestVersion
+            ) {
+
+              this.calculating.set(
+                false,
+              );
+            }
           },
         ),
       )
@@ -330,12 +487,34 @@ export class Sustainability {
 
         next: result => {
 
+          if (
+            requestVersion
+            !== this.calculationRequestVersion
+          ) {
+            return;
+          }
+
+
           this.farmResult.set(
             result,
           );
+
+
+          this.loadDetailedResults(
+            selectedIds,
+          );
         },
 
+
         error: error => {
+
+          if (
+            requestVersion
+            !== this.calculationRequestVersion
+          ) {
+            return;
+          }
+
 
           this.errorMessage.set(
             error?.error?.error
@@ -346,25 +525,146 @@ export class Sustainability {
   }
 
 
+  private loadDetailedResults(
+    seasonIds: number[],
+  ): void {
+
+    const requestVersion =
+      ++this.detailRequestVersion;
+
+
+    this.detailedResults.set([]);
+
+    this.analysisErrorMessage.set(
+      null,
+    );
+
+
+    if (
+      seasonIds.length === 0
+    ) {
+
+      this.loadingDetails.set(
+        false,
+      );
+
+      return;
+    }
+
+
+    this.loadingDetails.set(
+      true,
+    );
+
+
+    forkJoin(
+      seasonIds.map(
+        seasonId =>
+          this.sustainabilityService
+            .getParcelSeasonSustainability(
+              seasonId,
+            )
+            .pipe(
+              catchError(
+                () => of(null),
+              ),
+            ),
+      ),
+    )
+      .pipe(
+        finalize(
+          () => {
+
+            if (
+              requestVersion
+              === this.detailRequestVersion
+            ) {
+
+              this.loadingDetails.set(
+                false,
+              );
+            }
+          },
+        ),
+      )
+      .subscribe(
+        results => {
+
+          if (
+            requestVersion
+            !== this.detailRequestVersion
+          ) {
+            return;
+          }
+
+
+          const availableResults =
+            results.filter(
+              (
+                result,
+              ): result is ParcelSeasonSustainabilityResult =>
+                result !== null,
+            );
+
+
+          this.detailedResults.set(
+            availableResults,
+          );
+
+
+          if (
+            availableResults.length
+            !== seasonIds.length
+          ) {
+
+            this.analysisErrorMessage.set(
+              'Some detailed sustainability data could not be loaded.',
+            );
+          }
+        },
+      );
+  }
+
+
   onPlanChange(
-  parcelId: number,
-  event: Event,
-): void {
-  const select = event.target as HTMLSelectElement;
+    parcelId: number,
+    event: Event,
+  ): void {
 
-  const seasonId = select.value
-    ? Number(select.value)
-    : null;
+    const target =
+      event.target;
 
-  this.selectedSeasonIds.update(
-    current => ({
-      ...current,
-      [parcelId]: seasonId,
-    }),
-  );
 
-  this.calculate();
-}
+    if (
+      !(
+        target
+        instanceof HTMLSelectElement
+      )
+    ) {
+      return;
+    }
+
+
+    const seasonId =
+      target.value
+        ? Number(
+            target.value,
+          )
+        : null;
+
+
+    this.selectedSeasonIds.update(
+      current => ({
+        ...current,
+
+        [parcelId]:
+          seasonId,
+      }),
+    );
+
+
+    this.calculate();
+  }
 
 
   selectedPlanId(
@@ -392,9 +692,25 @@ export class Sustainability {
         .find(
           result =>
             result.parcel_id
-              === parcelId,
+            === parcelId,
         )
       ?? null
+    );
+  }
+
+
+  formatPlan(
+    season: ParcelSeason,
+  ): string {
+
+    return (
+      `${season.plan_name} — `
+      + `${this.formatCrop(
+        season.crop,
+      )} · `
+      + `${this.formatStrategy(
+        season.farming_strategy,
+      )}`
     );
   }
 
@@ -446,6 +762,86 @@ export class Sustainability {
   }
 
 
+  formatMachineUse(
+    value: string | null,
+  ): string {
+
+    if (!value) {
+      return 'Not specified';
+    }
+
+
+    const labels:
+      Record<string, string> = {
+
+        low:
+          'Low',
+
+        medium:
+          'Medium',
+
+        high:
+          'High',
+      };
+
+
+    return (
+      labels[value]
+      ?? value
+    );
+  }
+
+
+  formatFertilizer(
+    value: string | null,
+  ): string {
+
+    return value ?? 'None';
+  }
+
+
+  formatSoilSource(
+    value: string,
+  ): string {
+
+    if (
+      value === 'user'
+    ) {
+      return 'User measurement';
+    }
+
+    if (
+      value === 'soilgrids'
+    ) {
+      return 'SoilGrids';
+    }
+
+    return value;
+  }
+
+
+  formatYieldSource(
+    value: string,
+  ): string {
+
+    if (
+      value
+      === 'current_simulation'
+    ) {
+      return 'Current simulation';
+    }
+
+    if (
+      value
+      === 'regional_recent_yield'
+    ) {
+      return 'Regional recent yield';
+    }
+
+    return value;
+  }
+
+
   formatMissingInput(
     input: string,
   ): string {
@@ -473,6 +869,53 @@ export class Sustainability {
     return (
       labels[input]
       ?? input
+    );
+  }
+
+
+  formatNumber(
+    value: number,
+    digits = 1,
+  ): string {
+
+    return value.toFixed(
+      digits,
+    );
+  }
+
+
+  formatSignedNumber(
+    value: number,
+    digits = 1,
+  ): string {
+
+    const prefix =
+      value > 0
+        ? '+'
+        : '';
+
+
+    return (
+      `${prefix}${value.toFixed(
+        digits,
+      )}`
+    );
+  }
+
+
+  scorePercent(
+    value: number,
+  ): number {
+
+    return Math.round(
+      Math.min(
+        1,
+        Math.max(
+          0,
+          value,
+        ),
+      )
+      * 100,
     );
   }
 }

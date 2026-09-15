@@ -92,23 +92,45 @@
         <div class="section-heading">
 
           <span class="section-label">
-            Season identity
+            Plan identity
           </span>
 
           <h2>
-            Crop and target season
+            Plan, crop and target season
           </h2>
 
           <p>
-            The system always selects the
-            next full growing season for
-            the selected crop.
+            Give each alternative plan a clear
+            name so it can be identified in
+            sustainability and strategy comparisons.
           </p>
 
         </div>
 
 
         <div class="form-grid">
+
+          <div class="form-field">
+
+            <label for="plan-name">
+              Plan name
+            </label>
+
+            <input
+              id="plan-name"
+              type="text"
+              maxlength="80"
+              placeholder="e.g. Baseline"
+              formControlName="plan_name"
+            />
+
+            <span class="field-info">
+              Use a descriptive name such as
+              Baseline, Lower fertilizer or Low machinery.
+            </span>
+
+          </div>
+
 
           <div class="form-field">
 
@@ -152,7 +174,6 @@
             <label>
               Target growing season
             </label>
-
 
             <div class="target-season-value">
 

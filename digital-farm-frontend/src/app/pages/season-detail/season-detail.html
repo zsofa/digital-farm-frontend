@@ -33,10 +33,14 @@
         </button>
 
         <span class="eyebrow">
-          Growing season
+          Growing plan
         </span>
 
         <h1>
+          {{ currentSeason.plan_name }}
+        </h1>
+
+        <p>
           {{
             currentSeason
               .season_start_year
@@ -47,16 +51,13 @@
               currentSeason.crop
             )
           }}
-        </h1>
-
-        <p>
+          ·
           {{
             formatStrategy(
               currentSeason
                 .farming_strategy
             )
           }}
-          farming strategy
         </p>
 
       </div>
@@ -181,7 +182,7 @@
             </span>
 
             <h2>
-              Season configuration
+              Plan configuration
             </h2>
 
           </div>
@@ -190,6 +191,22 @@
 
 
         <div class="data-list">
+
+          <div class="data-row">
+
+            <span>
+              Plan name
+            </span>
+
+            <strong>
+              {{
+                currentSeason
+                  .plan_name
+              }}
+            </strong>
+
+          </div>
+
 
           <div class="data-row">
 
@@ -288,7 +305,7 @@
               {{
                 currentSeason
                   .fertilizer_type
-                  ?? 'Not specified'
+                  ?? 'None'
               }}
             </strong>
 
@@ -317,7 +334,7 @@
 
               } @else {
 
-                Not specified
+                None
 
               }
 

@@ -13,6 +13,7 @@ import {
 
 import {
   FarmSustainabilityResult,
+  ParcelSeasonSustainabilityResult,
 } from '../models/sustainability.model';
 
 
@@ -35,6 +36,15 @@ export class SustainabilityService {
         parcel_season_ids:
           parcelSeasonIds,
       },
+    );
+  }
+
+
+  getParcelSeasonSustainability(
+    parcelSeasonId: number,
+  ) {
+    return this.http.get<ParcelSeasonSustainabilityResult>(
+      `${environment.apiUrl}/sustainability/parcel-seasons/${parcelSeasonId}`,
     );
   }
 }

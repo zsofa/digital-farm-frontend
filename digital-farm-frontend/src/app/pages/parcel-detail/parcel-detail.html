@@ -18,7 +18,11 @@
 
         <div>
 
-            <button type="button" class="back-button" (click)="goBack()">
+            <button
+                type="button"
+                class="back-button"
+                (click)="goBack()"
+            >
                 ← Back to dashboard
             </button>
 
@@ -30,13 +34,16 @@
                 </span>
 
 
-                <span class="status-badge" [class.inactive]="
-          !currentParcel.is_active
-        ">
+                <span
+                    class="status-badge"
+                    [class.inactive]="
+                        !currentParcel.is_active
+                    "
+                >
                     {{
-                    currentParcel.is_active
-                    ? 'Active'
-                    : 'Inactive'
+                        currentParcel.is_active
+                            ? 'Active'
+                            : 'Inactive'
                     }}
                 </span>
 
@@ -57,23 +64,31 @@
 
         <div class="parcel-actions">
 
-            <a class="edit-button" [routerLink]="[
-        '/parcels',
-        currentParcel.id,
-        'edit'
-      ]">
+            <a
+                class="edit-button"
+                [routerLink]="[
+                    '/parcels',
+                    currentParcel.id,
+                    'edit'
+                ]"
+            >
                 Edit parcel
             </a>
 
 
-            <button type="button" class="status-button" [disabled]="changingStatus()" (click)="toggleActiveStatus()">
+            <button
+                type="button"
+                class="status-button"
+                [disabled]="changingStatus()"
+                (click)="toggleActiveStatus()"
+            >
 
                 @if (changingStatus()) {
 
                 Updating...
 
                 } @else if (
-                currentParcel.is_active
+                    currentParcel.is_active
                 ) {
 
                 Set inactive
@@ -87,11 +102,16 @@
             </button>
 
 
-            <button type="button" class="delete-button" [disabled]="deleting()" (click)="deleteParcel()">
+            <button
+                type="button"
+                class="delete-button"
+                [disabled]="deleting()"
+                (click)="deleteParcel()"
+            >
                 {{
-                deleting()
-                ? 'Deleting...'
-                : 'Delete parcel'
+                    deleting()
+                        ? 'Deleting...'
+                        : 'Delete parcel'
                 }}
             </button>
 
@@ -133,7 +153,11 @@
             </span>
 
             <strong>
-                {{ currentParcel.official_area_ha }} ha
+                {{
+                    currentParcel
+                        .official_area_ha
+                }}
+                ha
             </strong>
 
         </article>
@@ -145,13 +169,16 @@
                 Soil data source
             </span>
 
-            @if (currentParcel.soil; as soil) {
+            @if (
+                currentParcel.soil;
+                as soil
+            ) {
 
             <strong>
                 {{
-                formatSoilSource(
-                soil.source
-                )
+                    formatSoilSource(
+                        soil.source
+                    )
                 }}
             </strong>
 
@@ -169,11 +196,14 @@
         <article class="summary-card">
 
             <span>
-                Growing seasons
+                Growing plans
             </span>
 
             <strong>
-                {{ currentParcel.seasons.length }}
+                {{
+                    currentParcel
+                        .seasons.length
+                }}
             </strong>
 
         </article>
@@ -201,15 +231,15 @@
 
 
                 @if (
-                currentParcel.soil;
-                as soil
+                    currentParcel.soil;
+                    as soil
                 ) {
 
                 <span class="source-badge">
                     {{
-                    formatSoilSource(
-                    soil.source
-                    )
+                        formatSoilSource(
+                            soil.source
+                        )
                     }}
                 </span>
 
@@ -220,7 +250,11 @@
 
             @if (editingSoil()) {
 
-            <form class="soil-form" [formGroup]="soilForm" (ngSubmit)="saveSoil()">
+            <form
+                class="soil-form"
+                [formGroup]="soilForm"
+                (ngSubmit)="saveSoil()"
+            >
 
                 <div class="soil-form-grid">
 
@@ -230,7 +264,14 @@
                             pH
                         </label>
 
-                        <input id="soil-ph" type="number" step="0.01" min="0" max="14" formControlName="soil_ph" />
+                        <input
+                            id="soil-ph"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            max="14"
+                            formControlName="soil_ph"
+                        />
 
                     </div>
 
@@ -243,7 +284,13 @@
 
                         <div class="soil-input-unit">
 
-                            <input id="soil-soc" type="number" step="0.01" min="0" formControlName="soil_soc_g_kg" />
+                            <input
+                                id="soil-soc"
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                formControlName="soil_soc_g_kg"
+                            />
 
                             <span>
                                 g/kg
@@ -262,8 +309,14 @@
 
                         <div class="soil-input-unit">
 
-                            <input id="soil-clay" type="number" step="0.01" min="0" max="100"
-                                formControlName="soil_clay_pct" />
+                            <input
+                                id="soil-clay"
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                max="100"
+                                formControlName="soil_clay_pct"
+                            />
 
                             <span>
                                 %
@@ -280,7 +333,11 @@
                             Measurement date
                         </label>
 
-                        <input id="measured-at" type="date" formControlName="measured_at" />
+                        <input
+                            id="measured-at"
+                            type="date"
+                            formControlName="measured_at"
+                        />
 
                         <span class="soil-field-hint">
                             Optional
@@ -303,18 +360,26 @@
 
                 <div class="soil-form-actions">
 
-                    <button type="button" class="soil-cancel-button" [disabled]="savingSoil()"
-                        (click)="cancelSoilEdit()">
+                    <button
+                        type="button"
+                        class="soil-cancel-button"
+                        [disabled]="savingSoil()"
+                        (click)="cancelSoilEdit()"
+                    >
                         Cancel
                     </button>
 
 
-                    <button type="submit" class="soil-save-button" [disabled]="savingSoil()">
+                    <button
+                        type="submit"
+                        class="soil-save-button"
+                        [disabled]="savingSoil()"
+                    >
 
                         {{
-                        savingSoil()
-                        ? 'Saving...'
-                        : 'Save measurement'
+                            savingSoil()
+                                ? 'Saving...'
+                                : 'Save measurement'
                         }}
 
                     </button>
@@ -324,8 +389,8 @@
             </form>
 
             } @else if (
-            currentParcel.soil;
-            as soil
+                currentParcel.soil;
+                as soil
             ) {
 
             <div class="data-list">
@@ -350,7 +415,11 @@
                     </span>
 
                     <strong>
-                        {{ soil.soil_soc_g_kg }} g/kg
+                        {{
+                            soil
+                                .soil_soc_g_kg
+                        }}
+                        g/kg
                     </strong>
 
                 </div>
@@ -363,7 +432,10 @@
                     </span>
 
                     <strong>
-                        {{ soil.soil_clay_pct }}%
+                        {{
+                            soil
+                                .soil_clay_pct
+                        }}%
                     </strong>
 
                 </div>
@@ -392,27 +464,36 @@
 
             <div class="soil-actions">
 
-                <button type="button" class="soil-edit-button" (click)="startSoilEdit()">
+                <button
+                    type="button"
+                    class="soil-edit-button"
+                    (click)="startSoilEdit()"
+                >
 
                     {{
-                    soil.source === 'user'
-                    ? 'Edit measurement'
-                    : 'Add own soil measurement'
+                        soil.source === 'user'
+                            ? 'Edit measurement'
+                            : 'Add own soil measurement'
                     }}
 
                 </button>
 
 
                 @if (
-                soil.source === 'user'
+                    soil.source === 'user'
                 ) {
 
-                <button type="button" class="soil-remove-button" [disabled]="deletingSoil()" (click)="removeUserSoil()">
+                <button
+                    type="button"
+                    class="soil-remove-button"
+                    [disabled]="deletingSoil()"
+                    (click)="removeUserSoil()"
+                >
 
                     {{
-                    deletingSoil()
-                    ? 'Removing...'
-                    : 'Remove measurement'
+                        deletingSoil()
+                            ? 'Removing...'
+                            : 'Remove measurement'
                     }}
 
                 </button>
@@ -432,7 +513,7 @@
 
 
             @if (
-            soil.source === 'user'
+                soil.source === 'user'
             ) {
 
             <div class="soil-source-note">
@@ -458,7 +539,11 @@
 
                 @if (currentParcel.is_active) {
 
-                <button type="button" class="soil-edit-button" (click)="startSoilEdit()">
+                <button
+                    type="button"
+                    class="soil-edit-button"
+                    (click)="startSoilEdit()"
+                >
                     Add own soil measurement
                 </button>
 
@@ -478,11 +563,11 @@
                 <div>
 
                     <span class="section-label">
-                        Seasons
+                        Planning
                     </span>
 
                     <h2>
-                        Growing seasons
+                        Growing plans
                     </h2>
 
                 </div>
@@ -490,26 +575,34 @@
 
                 @if (currentParcel.is_active) {
 
-                <a class="season-add-button" [routerLink]="[
-        '/parcels',
-        currentParcel.id,
-        'seasons',
-        'new'
-      ]">
-                    Add growing season
+                <a
+                    class="season-add-button"
+                    [routerLink]="[
+                        '/parcels',
+                        currentParcel.id,
+                        'seasons',
+                        'new'
+                    ]"
+                >
+                    Add growing plan
                 </a>
 
                 }
 
             </div>
 
-            @if (currentParcel.seasons.length > 0) {
+
+            @if (
+                currentParcel
+                    .seasons.length > 0
+            ) {
 
             <div class="season-list">
 
                 @for (
-                season of currentParcel.seasons;
-                track season.id
+                    season
+                    of currentParcel.seasons;
+                    track season.id
                 ) {
 
                 <article class="season-card">
@@ -519,14 +612,22 @@
                         <div>
 
                             <strong>
-                                {{ season.season_start_year }}
+                                {{
+                                    season
+                                        .plan_name
+                                }}
                             </strong>
 
                             <span>
                                 {{
-                                formatCrop(
-                                season.crop
-                                )
+                                    season
+                                        .season_start_year
+                                }}
+                                ·
+                                {{
+                                    formatCrop(
+                                        season.crop
+                                    )
                                 }}
                             </span>
 
@@ -535,9 +636,10 @@
 
                         <span class="strategy-badge">
                             {{
-                            formatStrategy(
-                            season.farming_strategy
-                            )
+                                formatStrategy(
+                                    season
+                                        .farming_strategy
+                                )
                             }}
                         </span>
 
@@ -554,9 +656,10 @@
 
                             <strong>
                                 {{
-                                season.is_irrigated
-                                ? 'Yes'
-                                : 'No'
+                                    season
+                                        .is_irrigated
+                                        ? 'Yes'
+                                        : 'No'
                                 }}
                             </strong>
 
@@ -571,9 +674,10 @@
 
                             <strong>
                                 {{
-                                formatMachineUse(
-                                season.machine_use
-                                )
+                                    formatMachineUse(
+                                        season
+                                            .machine_use
+                                    )
                                 }}
                             </strong>
 
@@ -588,8 +692,9 @@
 
                             <strong>
                                 {{
-                                season.fertilizer_type
-                                ?? 'None'
+                                    season
+                                        .fertilizer_type
+                                        ?? 'None'
                                 }}
                             </strong>
 
@@ -605,18 +710,20 @@
                             <strong>
 
                                 @if (
-                                season.fertilizer_quantity_kg_ha
-                                !== null
+                                    season
+                                        .fertilizer_quantity_kg_ha
+                                    !== null
                                 ) {
 
                                 {{
-                                season.fertilizer_quantity_kg_ha
+                                    season
+                                        .fertilizer_quantity_kg_ha
                                 }}
                                 kg/ha
 
                                 } @else {
 
-                                Not specified
+                                None
 
                                 }
 
@@ -627,11 +734,14 @@
                     </div>
 
 
-                    <a class="season-button" [routerLink]="[
-                    '/parcel-seasons',
-                    season.id
-                  ]">
-                        View season
+                    <a
+                        class="season-button"
+                        [routerLink]="[
+                            '/parcel-seasons',
+                            season.id
+                        ]"
+                    >
+                        View plan
                     </a>
 
                 </article>
@@ -643,7 +753,7 @@
             } @else {
 
             <div class="empty-section">
-                No growing seasons have been added yet.
+                No growing plans have been added yet.
             </div>
 
             }

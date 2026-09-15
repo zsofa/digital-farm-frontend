@@ -1,12 +1,13 @@
-
 import {
   SimulationSummary,
 } from './simulation.model';
+
 
 export interface PolygonGeometry {
   type: 'Polygon';
   coordinates: number[][][];
 }
+
 
 export interface ParcelSummary {
   id: number;
@@ -18,17 +19,27 @@ export interface ParcelSummary {
   deactivated_at: string | null;
 }
 
+
 export interface ParcelSoil {
-  source: 'soilgrids' | 'user';
+  source:
+    | 'soilgrids'
+    | 'user';
+
   soil_ph: number;
   soil_soc_g_kg: number;
   soil_clay_pct: number;
-  measured_at: string | null;
+
+  measured_at:
+    string | null;
 }
+
 
 export interface ParcelSeason {
   id: number;
   parcel_id: number;
+
+  plan_name: string;
+
   season_start_year: number;
 
   crop:
@@ -61,26 +72,45 @@ export interface ParcelSeason {
   updated_at: string;
 }
 
+
 export interface ParcelSeasonDetails
   extends ParcelSeason {
 
-  simulations: SimulationSummary[];
+  simulations:
+    SimulationSummary[];
 }
+
+
 export interface ParcelDetails {
   id: number;
   farm_id: number;
+
   name: string;
+
   official_area_ha: number;
+
   county_name: string;
-  geometry: PolygonGeometry;
-  soil: ParcelSoil | null;
-  seasons: ParcelSeason[];
+
+  geometry:
+    PolygonGeometry;
+
+  soil:
+    ParcelSoil | null;
+
+  seasons:
+    ParcelSeason[];
+
   created_at: string;
   updated_at: string;
+
   is_active: boolean;
-  deactivated_at: string | null;
+
+  deactivated_at:
+    string | null;
+
   revision: number;
 }
+
 
 export interface ParcelCreateRequest {
   name: string;
@@ -88,9 +118,11 @@ export interface ParcelCreateRequest {
   geometry: PolygonGeometry;
 }
 
+
 export interface ParcelUpdateRequest {
   name: string;
 }
+
 
 export interface ParcelRequest {
   name: string;
@@ -98,9 +130,14 @@ export interface ParcelRequest {
   geometry: PolygonGeometry;
 }
 
+
 export interface ParcelSoilRequest {
   soil_ph: number;
+
   soil_soc_g_kg: number;
+
   soil_clay_pct: number;
-  measured_at: string | null;
+
+  measured_at:
+    string | null;
 }

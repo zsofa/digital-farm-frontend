@@ -25,13 +25,18 @@ export type SeasonCrop =
 
 export interface NextSeasonTarget {
   crop: SeasonCrop;
+
   season_start_year: number;
+
   start_date: string;
+
   end_date: string;
 }
 
 
 export interface SeasonCreateRequest {
+  plan_name: string;
+
   crop: SeasonCrop;
 
   farming_strategy:
@@ -58,6 +63,8 @@ export interface SeasonCreateRequest {
 
 
 export interface SeasonUpdateRequest {
+  plan_name: string;
+
   farming_strategy:
     | 'conventional'
     | 'reduced';
@@ -99,7 +106,7 @@ export class SeasonService {
         params: {
           crop,
         },
-      }
+      },
     );
   }
 
@@ -110,7 +117,7 @@ export class SeasonService {
   ) {
     return this.http.post<ParcelSeason>(
       `${environment.apiUrl}/parcels/${parcelId}/seasons`,
-      data
+      data,
     );
   }
 
@@ -119,7 +126,7 @@ export class SeasonService {
     seasonId: number,
   ) {
     return this.http.get<ParcelSeasonDetails>(
-      `${environment.apiUrl}/parcel-seasons/${seasonId}`
+      `${environment.apiUrl}/parcel-seasons/${seasonId}`,
     );
   }
 
@@ -130,7 +137,7 @@ export class SeasonService {
   ) {
     return this.http.put<ParcelSeason>(
       `${environment.apiUrl}/parcel-seasons/${seasonId}`,
-      data
+      data,
     );
   }
 
@@ -139,7 +146,7 @@ export class SeasonService {
     seasonId: number,
   ) {
     return this.http.delete<void>(
-      `${environment.apiUrl}/parcel-seasons/${seasonId}`
+      `${environment.apiUrl}/parcel-seasons/${seasonId}`,
     );
   }
 }

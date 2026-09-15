@@ -61,12 +61,12 @@ export class SeasonForm
 
   readonly parcel =
     signal<ParcelDetails | null>(
-      null
+      null,
     );
 
   readonly season =
     signal<ParcelSeasonDetails | null>(
-      null
+      null,
     );
 
   readonly isEditMode =
@@ -83,12 +83,12 @@ export class SeasonForm
 
   readonly targetSeason =
     signal<NextSeasonTarget | null>(
-      null
+      null,
     );
 
   readonly errorMessage =
     signal<string | null>(
-      null
+      null,
     );
 
 
@@ -114,6 +114,14 @@ export class SeasonForm
 
     this.form =
       this.fb.nonNullable.group({
+
+        plan_name: [
+          '',
+          [
+            Validators.required,
+            Validators.maxLength(80),
+          ],
+        ],
 
         crop: [
           'maize' as SeasonCrop,
@@ -164,25 +172,25 @@ export class SeasonForm
       Number(
         this.route.snapshot
           .paramMap
-          .get('seasonId')
+          .get('seasonId'),
       );
 
     const parcelId =
       Number(
         this.route.snapshot
           .paramMap
-          .get('parcelId')
+          .get('parcelId'),
       );
 
 
     if (seasonId) {
 
       this.isEditMode.set(
-        true
+        true,
       );
 
       this.loadSeason(
-        seasonId
+        seasonId,
       );
 
       return;
@@ -193,26 +201,30 @@ export class SeasonForm
       .valueChanges
       .pipe(
         takeUntilDestroyed(
-          this.destroyRef
-        )
+          this.destroyRef,
+        ),
       )
-      .subscribe(crop => {
+      .subscribe(
+        crop => {
 
-        this.loadTargetSeason(
-          crop
-        );
-      });
+          this.loadTargetSeason(
+            crop,
+          );
+        },
+      );
 
 
     this.loadTargetSeason(
-      this.form.controls.crop.value
+      this.form.controls
+        .crop
+        .value,
     );
 
 
     if (parcelId) {
 
       this.loadParcel(
-        parcelId
+        parcelId,
       );
 
       return;
@@ -220,29 +232,33 @@ export class SeasonForm
 
 
     this.errorMessage.set(
-      'Invalid growing season route.'
+      'Invalid growing season route.',
     );
 
-    this.loading.set(false);
+    this.loading.set(
+      false,
+    );
   }
 
 
   save(): void {
 
     if (
-      this.saving() ||
-      this.loading()
+      this.saving()
+      || this.loading()
     ) {
       return;
     }
 
 
-    if (this.form.invalid) {
+    if (
+      this.form.invalid
+    ) {
 
       this.form.markAllAsTouched();
 
       this.errorMessage.set(
-        'Complete the required growing season information.'
+        'Complete the required growing season information.',
       );
 
       return;
@@ -256,17 +272,19 @@ export class SeasonForm
     if (!parcel) {
 
       this.errorMessage.set(
-        'Parcel is not available.'
+        'Parcel is not available.',
       );
 
       return;
     }
 
 
-    if (!parcel.is_active) {
+    if (
+      !parcel.is_active
+    ) {
 
       this.errorMessage.set(
-        'Inactive parcels cannot be modified.'
+        'Inactive parcels cannot be modified.',
       );
 
       return;
@@ -274,12 +292,28 @@ export class SeasonForm
 
 
     const values =
-      this.form.getRawValue();
+      this.form
+        .getRawValue();
+
+
+    const planName =
+      values.plan_name
+        .trim();
+
+
+    if (!planName) {
+
+      this.errorMessage.set(
+        'Plan name is required.',
+      );
+
+      return;
+    }
 
 
     const fertilizerType =
-      values.fertilizer_type ||
-      null;
+      values.fertilizer_type
+      || null;
 
 
     let fertilizerQuantity =
@@ -295,19 +329,22 @@ export class SeasonForm
 
 
     if (
-      fertilizerType &&
-      fertilizerQuantity === null
+      fertilizerType
+      && fertilizerQuantity
+      === null
     ) {
 
       this.errorMessage.set(
-        'Enter fertilizer quantity when a fertilizer type is selected.'
+        'Enter fertilizer quantity when a fertilizer type is selected.',
       );
 
       return;
     }
 
 
-    if (this.isEditMode()) {
+    if (
+      this.isEditMode()
+    ) {
 
       const season =
         this.season();
@@ -316,7 +353,7 @@ export class SeasonForm
       if (!season) {
 
         this.errorMessage.set(
-          'Growing season is not available.'
+          'Growing season is not available.',
         );
 
         return;
@@ -326,6 +363,9 @@ export class SeasonForm
       const payload:
         SeasonUpdateRequest = {
 
+        plan_name:
+          planName,
+
         farming_strategy:
           values.farming_strategy,
 
@@ -333,8 +373,8 @@ export class SeasonForm
           values.is_irrigated,
 
         machine_use:
-          values.machine_use ||
-          null,
+          values.machine_use
+          || null,
 
         fertilizer_type:
           fertilizerType,
@@ -346,17 +386,19 @@ export class SeasonForm
 
       this.updateSeason(
         season.id,
-        payload
+        payload,
       );
 
       return;
     }
 
 
-    if (!this.targetSeason()) {
+    if (
+      !this.targetSeason()
+    ) {
 
       this.errorMessage.set(
-        'Target growing season is not available.'
+        'Target growing season is not available.',
       );
 
       return;
@@ -365,6 +407,9 @@ export class SeasonForm
 
     const payload:
       SeasonCreateRequest = {
+
+      plan_name:
+        planName,
 
       crop:
         values.crop,
@@ -376,8 +421,8 @@ export class SeasonForm
         values.is_irrigated,
 
       machine_use:
-        values.machine_use ||
-        null,
+        values.machine_use
+        || null,
 
       fertilizer_type:
         fertilizerType,
@@ -389,7 +434,7 @@ export class SeasonForm
 
     this.createSeason(
       parcel.id,
-      payload
+      payload,
     );
   }
 
@@ -442,11 +487,11 @@ export class SeasonForm
         day: 'numeric',
         month: 'short',
         year: 'numeric',
-      }
+      },
     ).format(
       new Date(
-        `${value}T00:00:00`
-      )
+        `${value}T00:00:00`,
+      ),
     );
   }
 
@@ -455,34 +500,36 @@ export class SeasonForm
     crop: SeasonCrop,
   ): void {
 
-    if (this.isEditMode()) {
+    if (
+      this.isEditMode()
+    ) {
       return;
     }
 
 
     this.targetSeasonLoading.set(
-      true
+      true,
     );
 
     this.targetSeason.set(
-      null
+      null,
     );
 
 
     this.seasonService
       .getNextSeasonTarget(
-        crop
+        crop,
       )
       .subscribe({
 
         next: result => {
 
           this.targetSeason.set(
-            result
+            result,
           );
 
           this.targetSeasonLoading.set(
-            false
+            false,
           );
         },
 
@@ -490,12 +537,12 @@ export class SeasonForm
         error: error => {
 
           this.targetSeasonLoading.set(
-            false
+            false,
           );
 
           this.errorMessage.set(
-            error.error?.error ??
-              'Unable to determine the next growing season.'
+            error.error?.error
+            ?? 'Unable to determine the next growing season.',
           );
         },
       });
@@ -508,18 +555,18 @@ export class SeasonForm
 
     this.parcelService
       .getParcel(
-        parcelId
+        parcelId,
       )
       .subscribe({
 
         next: parcel => {
 
           this.parcel.set(
-            parcel
+            parcel,
           );
 
           this.loading.set(
-            false
+            false,
           );
         },
 
@@ -527,12 +574,12 @@ export class SeasonForm
         error: error => {
 
           this.errorMessage.set(
-            error.error?.error ??
-              'Unable to load parcel.'
+            error.error?.error
+            ?? 'Unable to load parcel.',
           );
 
           this.loading.set(
-            false
+            false,
           );
         },
       });
@@ -545,18 +592,21 @@ export class SeasonForm
 
     this.seasonService
       .getSeason(
-        seasonId
+        seasonId,
       )
       .subscribe({
 
         next: season => {
 
           this.season.set(
-            season
+            season,
           );
 
 
           this.form.patchValue({
+
+            plan_name:
+              season.plan_name,
 
             crop:
               season.crop,
@@ -568,10 +618,12 @@ export class SeasonForm
               season.is_irrigated,
 
             machine_use:
-              season.machine_use ?? '',
+              season.machine_use
+              ?? '',
 
             fertilizer_type:
-              season.fertilizer_type ?? '',
+              season.fertilizer_type
+              ?? '',
 
             fertilizer_quantity_kg_ha:
               season
@@ -585,7 +637,7 @@ export class SeasonForm
 
 
           this.loadParcelForSeason(
-            season.parcel_id
+            season.parcel_id,
           );
         },
 
@@ -593,12 +645,12 @@ export class SeasonForm
         error: error => {
 
           this.errorMessage.set(
-            error.error?.error ??
-              'Unable to load growing season.'
+            error.error?.error
+            ?? 'Unable to load growing season.',
           );
 
           this.loading.set(
-            false
+            false,
           );
         },
       });
@@ -611,18 +663,18 @@ export class SeasonForm
 
     this.parcelService
       .getParcel(
-        parcelId
+        parcelId,
       )
       .subscribe({
 
         next: parcel => {
 
           this.parcel.set(
-            parcel
+            parcel,
           );
 
           this.loading.set(
-            false
+            false,
           );
         },
 
@@ -630,12 +682,12 @@ export class SeasonForm
         error: error => {
 
           this.errorMessage.set(
-            error.error?.error ??
-              'Unable to load parcel.'
+            error.error?.error
+            ?? 'Unable to load parcel.',
           );
 
           this.loading.set(
-            false
+            false,
           );
         },
       });
@@ -647,21 +699,27 @@ export class SeasonForm
     payload: SeasonCreateRequest,
   ): void {
 
-    this.saving.set(true);
+    this.saving.set(
+      true,
+    );
 
-    this.errorMessage.set(null);
+    this.errorMessage.set(
+      null,
+    );
 
 
     this.seasonService
       .createSeason(
         parcelId,
-        payload
+        payload,
       )
       .subscribe({
 
         next: season => {
 
-          this.saving.set(false);
+          this.saving.set(
+            false,
+          );
 
           this.router.navigate([
             '/parcel-seasons',
@@ -672,11 +730,13 @@ export class SeasonForm
 
         error: error => {
 
-          this.saving.set(false);
+          this.saving.set(
+            false,
+          );
 
           this.errorMessage.set(
-            error.error?.error ??
-              'Unable to create growing season.'
+            error.error?.error
+            ?? 'Unable to create growing season.',
           );
         },
       });
@@ -688,21 +748,27 @@ export class SeasonForm
     payload: SeasonUpdateRequest,
   ): void {
 
-    this.saving.set(true);
+    this.saving.set(
+      true,
+    );
 
-    this.errorMessage.set(null);
+    this.errorMessage.set(
+      null,
+    );
 
 
     this.seasonService
       .updateSeason(
         seasonId,
-        payload
+        payload,
       )
       .subscribe({
 
         next: season => {
 
-          this.saving.set(false);
+          this.saving.set(
+            false,
+          );
 
           this.router.navigate([
             '/parcel-seasons',
@@ -713,11 +779,13 @@ export class SeasonForm
 
         error: error => {
 
-          this.saving.set(false);
+          this.saving.set(
+            false,
+          );
 
           this.errorMessage.set(
-            error.error?.error ??
-              'Unable to update growing season.'
+            error.error?.error
+            ?? 'Unable to update growing season.',
           );
         },
       });
