@@ -52,6 +52,8 @@ export interface SimulationSummary {
   expected_total_t: number | null;
 
   status: SimulationStatus;
+  model_version: string | null;
+  recent_yield_years: number[] | null;
 }
 
 
@@ -74,6 +76,8 @@ export interface SimulationDetails {
   season: SimulationSeason;
   soil: SimulationSoil;
   scenarios: SimulationScenarios;
+  model_version: string | null;
+  recent_yield_years: number[] | null;
 }
 
 
