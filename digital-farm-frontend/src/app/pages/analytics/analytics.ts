@@ -1,30 +1,19 @@
 import {
   Component,
-  ElementRef,
   OnDestroy,
-  ViewChild,
   computed,
   effect,
   inject,
   signal,
+  untracked,
 } from '@angular/core';
 
 import {
   catchError,
-  finalize,
   forkJoin,
   of,
+  Subscription,
 } from 'rxjs';
-
-import {
-  Chart,
-  ChartConfiguration,
-  registerables,
-} from 'chart.js';
-
-import {
-  FarmDetails,
-} from '../../models/farm.model';
 
 import {
   ParcelDetails,
@@ -48,2660 +37,544 @@ import {
   SustainabilityService,
 } from '../../services/sustainability.service';
 
+import {
+  calculateGhgImpact,
+} from '../sustainability/ghg-impact';
 
-Chart.register(
-  ...registerables,
-);
+type Detail = CompleteParcelSeasonSustainabilityResult;
+type MetricValue = number | null;
 
-
-type AnalyticsTab =
-  | 'overview'
-  | 'comparison';
-
-
-interface AnalyticsPlanGroup {
-  parcel: ParcelDetails;
-
-  seasons: ParcelSeason[];
+interface Metric {
+  label: string;
+  unit: string;
+  deltaUnit: string;
+  a: MetricValue;
+  b: MetricValue;
 }
-
-
-interface CropPerformance {
-  crop: string;
-
-  averageYield: number;
-
-  area: number;
-}
-
-
-interface Recommendation {
-  title: string;
-
-  reason: string;
-
-  tone:
-  | 'a'
-  | 'b'
-  | 'neutral';
-}
-
-
-function isCompleteDetailedResult(
-  result:
-    ParcelSeasonSustainabilityResult,
-): result is CompleteParcelSeasonSustainabilityResult {
-
-  return (
-    result.calculation_status
-    === 'complete'
-  );
-}
-
 
 @Component({
   selector: 'app-analytics',
-
   standalone: true,
-
-  imports: [],
-
-  templateUrl:
-    './analytics.html',
-
-  styleUrl:
-    './analytics.css',
+  templateUrl: './analytics.html',
+  styleUrl: './analytics.css',
 })
-export class Analytics
-  implements OnDestroy {
+export class Analytics implements OnDestroy {
+  private readonly context = inject(FarmContextService);
+  private readonly parcelsApi = inject(ParcelService);
 
-  private readonly farmContext =
-    inject(FarmContextService);
-
-  private readonly parcelService =
-    inject(ParcelService);
-
-  private readonly sustainabilityService =
+  private readonly sustainabilityApi =
     inject(SustainabilityService);
 
+  private readonly subscriptions = new Subscription();
 
-  private overviewRequestVersion = 0;
+  private plansVersion = 0;
+  private comparisonVersion = 0;
 
-  private comparisonRequestVersion = 0;
+  readonly loading = signal(true);
+  readonly comparing = signal(false);
 
+  readonly error = signal<string | null>(null);
+  readonly comparisonError = signal<string | null>(null);
 
-  private yieldScatterChart:
-    Chart | null = null;
+  readonly parcels = signal<ParcelDetails[]>([]);
 
-  private cropPerformanceChart:
-    Chart | null = null;
+  readonly parcelId = signal<number | null>(null);
+  readonly planAId = signal<number | null>(null);
+  readonly planBId = signal<number | null>(null);
 
-  private strategyProfileChart:
-    Chart | null = null;
+  readonly resultA =
+    signal<ParcelSeasonSustainabilityResult | null>(null);
 
-  private tradeoffChart:
-    Chart | null = null;
+  readonly resultB =
+    signal<ParcelSeasonSustainabilityResult | null>(null);
 
+  readonly selectedParcel = computed(() =>
+    this.parcels().find(
+      parcel => parcel.id === this.parcelId(),
+    ) ?? null,
+  );
 
-  @ViewChild(
-    'yieldScatterCanvas',
-  )
-  private yieldScatterCanvas?:
-    ElementRef<HTMLCanvasElement>;
+  readonly plans = computed(() =>
+    this.selectedParcel()?.seasons ?? [],
+  );
 
+  readonly planA = computed(() =>
+    this.plans().find(
+      plan => plan.id === this.planAId(),
+    ) ?? null,
+  );
 
-  @ViewChild(
-    'cropPerformanceCanvas',
-  )
-  private cropPerformanceCanvas?:
-    ElementRef<HTMLCanvasElement>;
+  readonly planB = computed(() =>
+    this.plans().find(
+      plan => plan.id === this.planBId(),
+    ) ?? null,
+  );
 
+  readonly detailA = computed(() =>
+    this.complete(this.resultA()),
+  );
 
-  @ViewChild(
-    'strategyProfileCanvas',
-  )
-  private strategyProfileCanvas?:
-    ElementRef<HTMLCanvasElement>;
+  readonly detailB = computed(() =>
+    this.complete(this.resultB()),
+  );
 
+  readonly ghgA = computed(() => {
+    const detail = this.detailA();
+    return detail ? calculateGhgImpact(detail) : null;
+  });
 
-  @ViewChild(
-    'tradeoffCanvas',
-  )
-  private tradeoffCanvas?:
-    ElementRef<HTMLCanvasElement>;
+  readonly ghgB = computed(() => {
+    const detail = this.detailB();
+    return detail ? calculateGhgImpact(detail) : null;
+  });
 
+  readonly metrics = computed<Metric[]>(() => {
+    const a = this.detailA();
+    const b = this.detailB();
 
-  readonly farm =
-    this.farmContext.selectedFarm;
+    const ga = this.ghgA();
+    const gb = this.ghgB();
 
-  readonly farmLoading =
-    this.farmContext.loading;
-
-
-  readonly activeTab =
-    signal<AnalyticsTab>(
-      'overview',
-    );
-
-
-  readonly loadingPlans =
-    signal(true);
-
-  readonly loadingOverview =
-    signal(false);
-
-  readonly loadingComparison =
-    signal(false);
-
-
-  readonly errorMessage =
-    signal<string | null>(
-      null,
-    );
-
-  readonly overviewWarning =
-    signal<string | null>(
-      null,
-    );
-
-  readonly comparisonErrorMessage =
-    signal<string | null>(
-      null,
-    );
-
-
-  readonly planGroups =
-    signal<AnalyticsPlanGroup[]>(
-      [],
-    );
-
-
-  readonly selectedSeasonIds =
-    signal<
-      Record<
-        number,
-        number | null
-      >
-    >({});
-
-
-  readonly detailBySeason =
-    signal<
-      Record<
-        number,
-        ParcelSeasonSustainabilityResult
-      >
-    >({});
-
-
-  readonly comparisonParcelId =
-    signal<number | null>(
-      null,
-    );
-
-  readonly comparisonSeasonAId =
-    signal<number | null>(
-      null,
-    );
-
-  readonly comparisonSeasonBId =
-    signal<number | null>(
-      null,
-    );
-
-
-  readonly comparisonA =
-    signal<
-      ParcelSeasonSustainabilityResult
-      | null
-    >(null);
-
-  readonly comparisonB =
-    signal<
-      ParcelSeasonSustainabilityResult
-      | null
-    >(null);
-
-
-  readonly selectedIds =
-    computed(() => {
-
-      return this.planGroups()
-        .map(
-          group =>
-            this.selectedSeasonIds()[
-            group.parcel.id
-            ],
-        )
-        .filter(
-          (
-            id,
-          ): id is number =>
-            id !== null
-            && id !== undefined,
-        );
-    });
-
-
-  readonly overviewCompleteDetails =
-    computed<
-      CompleteParcelSeasonSustainabilityResult[]
-    >(() => {
-
-      const details =
-        this.detailBySeason();
-
-      return this.selectedIds()
-        .map(
-          id =>
-            details[id],
-        )
-        .filter(
-          (
-            result,
-          ): result is CompleteParcelSeasonSustainabilityResult =>
-            result !== undefined
-            && isCompleteDetailedResult(
-              result,
-            ),
-        );
-    });
-
-
-  readonly unselectedParcelCount =
-    computed(() => {
-
-      return this.planGroups()
-        .filter(
-          group =>
-            group.seasons.length > 1
-            && this.selectedSeasonIds()[
-            group.parcel.id
-            ] === null,
-        )
-        .length;
-    });
-
-
-  readonly incompletePlanCount =
-    computed(() => {
-
-      const details =
-        this.detailBySeason();
-
-      return this.selectedIds()
-        .map(
-          id =>
-            details[id],
-        )
-        .filter(
-          detail =>
-            detail !== undefined
-            && detail.calculation_status
-            === 'incomplete',
-        )
-        .length;
-    });
-
-
-  readonly includedArea =
-    computed(() => {
-
-      return this.overviewCompleteDetails()
-        .reduce(
-          (
-            total,
-            detail,
-          ) =>
-            total
-            + detail.parcel
-              .official_area_ha,
-          0,
-        );
-    });
-
-
-  readonly averageYield =
-    computed<number | null>(
-      () => {
-
-        const details =
-          this.overviewCompleteDetails();
-
-        return this.weightedAverage(
-          details,
-          detail =>
-            detail.yield
-              .expected_yield_t_ha,
-        );
+    return [
+      {
+        label: 'Expected yield',
+        unit: 't/ha',
+        deltaUnit: 't/ha',
+        a: this.numeric(a?.yield.expected_yield_t_ha),
+        b: this.numeric(b?.yield.expected_yield_t_ha),
       },
-    );
-
-
-  readonly averageSustainability =
-    computed<number | null>(
-      () => {
-
-        const details =
-          this.overviewCompleteDetails();
-
-        return this.weightedAverage(
-          details,
-          detail =>
-            detail.sustainability
-              .sustainability_score
-            * 100,
-        );
+      {
+        label: 'Partial nitrogen balance',
+        unit: 'kg N/ha',
+        deltaUnit: 'kg N/ha',
+        a: this.numeric(
+          a?.sustainability.nitrogen.nitrogen_balance_kg_ha,
+        ),
+        b: this.numeric(
+          b?.sustainability.nitrogen.nitrogen_balance_kg_ha,
+        ),
       },
-    );
-
-
-  readonly fertilizerCo2eTotal =
-    computed<number | null>(
-      () => {
-
-        const details =
-          this.overviewCompleteDetails();
-
-        if (
-          details.length === 0
-        ) {
-          return null;
-        }
-
-        return details.reduce(
-          (
-            total,
-            detail,
-          ) => {
-
-            return (
-              total
-              + detail.sustainability
-                .ghg
-                .fertilizer_emission_kg_co2e_ha
-              * detail.parcel
-                .official_area_ha
-            );
-          },
-          0,
-        );
+      {
+        label: 'Estimated emissions',
+        unit: 'kg CO₂eq/ha',
+        deltaUnit: 'kg CO₂eq/ha',
+        a: ga?.emissionPerHa ?? null,
+        b: gb?.emissionPerHa ?? null,
       },
-    );
-
-
-  readonly bestField =
-    computed<
-      CompleteParcelSeasonSustainabilityResult
-      | null
-    >(() => {
-
-      const details =
-        this.overviewCompleteDetails();
-
-      if (
-        details.length === 0
-      ) {
-        return null;
-      }
-
-      return details.reduce(
-        (
-          best,
-          current,
-        ) => {
-
-          return (
-            current
-              .sustainability
-              .sustainability_score
-            >
-            best
-              .sustainability
-              .sustainability_score
-          )
-            ? current
-            : best;
-        },
-      );
-    });
-
-
-  readonly worstField =
-    computed<
-      CompleteParcelSeasonSustainabilityResult
-      | null
-    >(() => {
-
-      const details =
-        this.overviewCompleteDetails();
-
-      if (
-        details.length === 0
-      ) {
-        return null;
-      }
-
-      return details.reduce(
-        (
-          worst,
-          current,
-        ) => {
-
-          return (
-            current
-              .sustainability
-              .sustainability_score
-            <
-            worst
-              .sustainability
-              .sustainability_score
-          )
-            ? current
-            : worst;
-        },
-      );
-    });
-
-
-  readonly cropPerformance =
-    computed<CropPerformance[]>(
-      () => {
-
-        const crops =
-          new Map<
-            string,
-            {
-              weightedYield: number;
-              area: number;
-            }
-          >();
-
-
-        for (
-          const detail
-          of this.overviewCompleteDetails()
-        ) {
-
-          const crop =
-            detail.season.crop;
-
-          const area =
-            detail.parcel
-              .official_area_ha;
-
-          const yieldValue =
-            detail.yield
-              .expected_yield_t_ha;
-
-
-          const current =
-            crops.get(
-              crop,
-            )
-            ?? {
-              weightedYield: 0,
-              area: 0,
-            };
-
-
-          current.weightedYield +=
-            yieldValue * area;
-
-          current.area +=
-            area;
-
-
-          crops.set(
-            crop,
-            current,
-          );
-        }
-
-
-        return Array.from(
-          crops.entries(),
-        )
-          .map(
-            (
-              [
-                crop,
-                values,
-              ],
-            ) => ({
-              crop,
-
-              averageYield:
-                values.area > 0
-                  ? values.weightedYield
-                  / values.area
-                  : 0,
-
-              area:
-                values.area,
-            }),
-          )
-          .sort(
-            (
-              a,
-              b,
-            ) =>
-              b.averageYield
-              - a.averageYield,
-          );
+      {
+        label: 'Management score',
+        unit: '/100',
+        deltaUnit: 'points',
+        a: ga?.managementScore == null
+          ? null
+          : ga.managementScore * 100,
+        b: gb?.managementScore == null
+          ? null
+          : gb.managementScore * 100,
       },
-    );
+    ];
+  });
 
+  readonly yieldBars = computed(() => [
+    {
+      label: 'Plan A',
+      plan: this.planA(),
+      value: this.metrics()[0].a,
+      tone: 'a',
+    },
+    {
+      label: 'Plan B',
+      plan: this.planB(),
+      value: this.metrics()[0].b,
+      tone: 'b',
+    },
+  ]);
 
-  readonly comparisonGroups =
-    computed(() => {
+  readonly nitrogenBars = computed(() => [
+    {
+      label: 'Applied N',
+      a: this.numeric(
+        this.detailA()?.sustainability.nitrogen
+          .applied_nitrogen_kg_ha,
+      ),
+      b: this.numeric(
+        this.detailB()?.sustainability.nitrogen
+          .applied_nitrogen_kg_ha,
+      ),
+    },
+    {
+      label: 'Removed N',
+      a: this.numeric(
+        this.detailA()?.sustainability.nitrogen
+          .removed_nitrogen_kg_ha,
+      ),
+      b: this.numeric(
+        this.detailB()?.sustainability.nitrogen
+          .removed_nitrogen_kg_ha,
+      ),
+    },
+  ]);
 
-      return this.planGroups()
-        .filter(
-          group =>
-            group.seasons.length >= 2,
-        );
-    });
+  readonly yieldMax = computed(() =>
+    this.axisMax(
+      this.yieldBars().map(bar => bar.value),
+    ),
+  );
 
+  readonly nitrogenMax = computed(() =>
+    this.axisMax(
+      this.nitrogenBars().flatMap(group => [
+        group.a,
+        group.b,
+      ]),
+    ),
+  );
 
-  readonly comparisonSeasons =
-    computed(() => {
+  readonly settings = computed(() => {
+    const a = this.planA();
+    const b = this.planB();
 
-      const parcelId =
-        this.comparisonParcelId();
+    if (!a) {
+      return [];
+    }
 
-      if (
-        parcelId === null
-      ) {
-        return [];
-      }
-
-      return (
-        this.comparisonGroups()
-          .find(
-            group =>
-              group.parcel.id
-              === parcelId,
-          )
-          ?.seasons
-        ?? []
-      );
-    });
-
-
-  readonly comparisonAComplete =
-    computed<
-      CompleteParcelSeasonSustainabilityResult
-      | null
-    >(() => {
-
-      const result =
-        this.comparisonA();
-
-      if (
-        result
-        && isCompleteDetailedResult(
-          result,
-        )
-      ) {
-        return result;
-      }
-
-      return null;
-    });
-
-
-  readonly comparisonBComplete =
-    computed<
-      CompleteParcelSeasonSustainabilityResult
-      | null
-    >(() => {
-
-      const result =
-        this.comparisonB();
-
-      if (
-        result
-        && isCompleteDetailedResult(
-          result,
-        )
-      ) {
-        return result;
-      }
-
-      return null;
-    });
-
-
-  readonly yieldChangePct =
-    computed<number | null>(
-      () => {
-
-        const a =
-          this.comparisonAComplete();
-
-        const b =
-          this.comparisonBComplete();
-
-        if (
-          !a
-          || !b
-        ) {
-          return null;
-        }
-
-        return this.calculateChange(
-          a.yield
-            .expected_yield_t_ha,
-
-          b.yield
-            .expected_yield_t_ha,
-        );
+    return [
+      {
+        label: 'Crop',
+        a: this.crop(a.crop),
+        b: b ? this.crop(b.crop) : '—',
       },
-    );
-
-
-  readonly sustainabilityChangePct =
-    computed<number | null>(
-      () => {
-
-        const a =
-          this.comparisonAComplete();
-
-        const b =
-          this.comparisonBComplete();
-
-        if (
-          !a
-          || !b
-        ) {
-          return null;
-        }
-
-        return this.calculateChange(
-          a.sustainability
-            .sustainability_score,
-
-          b.sustainability
-            .sustainability_score,
-        );
+      {
+        label: 'Season start year',
+        a: String(a.season_start_year),
+        b: b ? String(b.season_start_year) : '—',
       },
-    );
-
-
-  readonly carbonChangePct =
-    computed<number | null>(
-      () => {
-
-        const a =
-          this.comparisonAComplete();
-
-        const b =
-          this.comparisonBComplete();
-
-        if (
-          !a
-          || !b
-        ) {
-          return null;
-        }
-
-        return this.calculateChange(
-          a.sustainability
-            .ghg
-            .fertilizer_emission_kg_co2e_ha,
-
-          b.sustainability
-            .ghg
-            .fertilizer_emission_kg_co2e_ha,
-        );
+      {
+        label: 'Farming strategy',
+        a: this.strategy(a.farming_strategy),
+        b: b ? this.strategy(b.farming_strategy) : '—',
       },
-    );
-
-
-  readonly recommendation =
-    computed<Recommendation>(
-      () => {
-
-        const a =
-          this.comparisonAComplete();
-
-        const b =
-          this.comparisonBComplete();
-
-
-        if (
-          !a
-          || !b
-        ) {
-          return {
-            title:
-              'Recommendation unavailable',
-
-            reason:
-              'Both plans need complete sustainability data before they can be compared.',
-
-            tone:
-              'neutral',
-          };
-        }
-
-
-        const yieldA =
-          a.yield
-            .expected_yield_t_ha;
-
-        const yieldB =
-          b.yield
-            .expected_yield_t_ha;
-
-        const scoreA =
-          a.sustainability
-            .sustainability_score;
-
-        const scoreB =
-          b.sustainability
-            .sustainability_score;
-
-        const carbonA =
-          a.sustainability
-            .ghg
-            .fertilizer_emission_kg_co2e_ha;
-
-        const carbonB =
-          b.sustainability
-            .ghg
-            .fertilizer_emission_kg_co2e_ha;
-
-
-        const aDominates =
-          yieldA >= yieldB
-          && scoreA >= scoreB
-          && carbonA <= carbonB
-          && (
-            yieldA > yieldB
-            || scoreA > scoreB
-            || carbonA < carbonB
-          );
-
-
-        const bDominates =
-          yieldB >= yieldA
-          && scoreB >= scoreA
-          && carbonB <= carbonA
-          && (
-            yieldB > yieldA
-            || scoreB > scoreA
-            || carbonB < carbonA
-          );
-
-
-        if (aDominates) {
-          return {
-            title:
-              `Recommended: ${this.planName(a)}`,
-
-            reason:
-              'Plan A provides equal or better yield and sustainability with equal or lower fertilizer-related emissions.',
-
-            tone:
-              'a',
-          };
-        }
-
-
-        if (bDominates) {
-          return {
-            title:
-              `Recommended: ${this.planName(b)}`,
-
-            reason:
-              'Plan B provides equal or better yield and sustainability with equal or lower fertilizer-related emissions.',
-
-            tone:
-              'b',
-          };
-        }
-
-
-        const aYieldSimilar =
-          yieldA
-          >= yieldB * 0.95;
-
-        const bYieldSimilar =
-          yieldB
-          >= yieldA * 0.95;
-
-
-        if (
-          scoreA > scoreB
-          && carbonA < carbonB
-          && aYieldSimilar
-        ) {
-          return {
-            title:
-              `Recommended: ${this.planName(a)}`,
-
-            reason:
-              'Plan A improves sustainability and lowers fertilizer-related emissions while expected yield remains within 5% of Plan B.',
-
-            tone:
-              'a',
-          };
-        }
-
-
-        if (
-          scoreB > scoreA
-          && carbonB < carbonA
-          && bYieldSimilar
-        ) {
-          return {
-            title:
-              `Recommended: ${this.planName(b)}`,
-
-            reason:
-              'Plan B improves sustainability and lowers fertilizer-related emissions while expected yield remains within 5% of Plan A.',
-
-            tone:
-              'b',
-          };
-        }
-
-
-        return {
-          title:
-            'Trade-off — no plan clearly dominates',
-
-          reason:
-            'The plans provide different benefits across yield, sustainability and fertilizer-related emissions. Review the trade-off charts before deciding.',
-
-          tone:
-            'neutral',
-        };
+      {
+        label: 'Machine use',
+        a: this.machine(a.machine_use),
+        b: b ? this.machine(b.machine_use) : '—',
       },
-    );
-
+      {
+        label: 'Fertilizer',
+        a: a.fertilizer_type ?? 'None',
+        b: b ? b.fertilizer_type ?? 'None' : '—',
+      },
+      {
+        label: 'Fertilizer quantity',
+        a: this.quantity(a.fertilizer_quantity_kg_ha),
+        b: b
+          ? this.quantity(b.fertilizer_quantity_kg_ha)
+          : '—',
+      },
+      {
+        label: 'Irrigation',
+        a: a.is_irrigated ? 'Yes' : 'No',
+        b: b ? (b.is_irrigated ? 'Yes' : 'No') : '—',
+      },
+    ];
+  });
 
   constructor() {
-
     effect(() => {
+      const waiting = this.context.loading();
+      const farm = this.context.selectedFarm();
 
-      const loading =
-        this.farmLoading();
+      untracked(() => {
+        const version = ++this.plansVersion;
+        ++this.comparisonVersion;
 
-      const farm =
-        this.farm();
+        this.parcels.set([]);
+        this.parcelId.set(null);
+        this.planAId.set(null);
+        this.planBId.set(null);
 
+        this.resultA.set(null);
+        this.resultB.set(null);
 
-      if (loading) {
+        this.error.set(null);
+        this.comparisonError.set(null);
 
-        this.loadingPlans.set(
-          true,
+        this.comparing.set(false);
+        this.loading.set(true);
+
+        if (waiting) {
+          return;
+        }
+
+        if (!farm) {
+          this.loading.set(false);
+          this.error.set('No farm available.');
+          return;
+        }
+
+        const active = farm.parcels.filter(
+          parcel => parcel.is_active,
         );
 
-        return;
-      }
+        if (!active.length) {
+          this.loading.set(false);
+          return;
+        }
 
+        this.subscriptions.add(
+          forkJoin(
+            active.map(parcel =>
+              this.parcelsApi
+                .getParcel(parcel.id)
+                .pipe(catchError(() => of(null))),
+            ),
+          ).subscribe(results => {
+            if (version !== this.plansVersion) {
+              return;
+            }
 
-      if (!farm) {
+            const available = results.filter(
+              (parcel): parcel is ParcelDetails =>
+                parcel !== null,
+            );
 
-        this.resetPage();
+            this.parcels.set(available);
+            this.loading.set(false);
 
-        this.loadingPlans.set(
-          false,
+            if (available.length !== active.length) {
+              this.error.set(
+                'Some parcels could not be loaded.',
+              );
+            }
+
+            this.chooseParcel(
+              this.parcels()[0]?.id ?? null,
+            );
+          }),
         );
-
-        this.errorMessage.set(
-          'No farm available.',
-        );
-
-        return;
-      }
-
-
-      this.loadPlans(
-        farm,
-      );
+      });
     });
   }
 
-
   ngOnDestroy(): void {
-
-    this.destroyCharts();
+    ++this.plansVersion;
+    ++this.comparisonVersion;
+    this.subscriptions.unsubscribe();
   }
 
-
-  setActiveTab(
-    tab: AnalyticsTab,
-  ): void {
-
-    this.activeTab.set(
-      tab,
-    );
-
-    this.scheduleChartRender();
+  changeParcel(event: Event): void {
+    this.chooseParcel(this.selectId(event));
   }
 
-
-  private resetPage(): void {
-
-    this.overviewRequestVersion += 1;
-
-    this.comparisonRequestVersion += 1;
-
-    this.planGroups.set([]);
-
-    this.selectedSeasonIds.set({});
-
-    this.detailBySeason.set({});
-
-    this.comparisonParcelId.set(
-      null,
-    );
-
-    this.comparisonSeasonAId.set(
-      null,
-    );
-
-    this.comparisonSeasonBId.set(
-      null,
-    );
-
-    this.comparisonA.set(
-      null,
-    );
-
-    this.comparisonB.set(
-      null,
-    );
-
-    this.errorMessage.set(
-      null,
-    );
-
-    this.overviewWarning.set(
-      null,
-    );
-
-    this.comparisonErrorMessage.set(
-      null,
-    );
-
-    this.destroyCharts();
-  }
-
-
-  private loadPlans(
-    farm: FarmDetails,
-  ): void {
-
-    this.resetPage();
-
-    this.loadingPlans.set(
-      true,
-    );
-
-
-    const activeParcels =
-      farm.parcels.filter(
-        parcel =>
-          parcel.is_active,
-      );
-
-
-    if (
-      activeParcels.length === 0
-    ) {
-
-      this.buildPlanGroups(
-        [],
-      );
-
-      this.loadingPlans.set(
-        false,
-      );
-
-      return;
-    }
-
-
-    forkJoin(
-      activeParcels.map(
-        parcel =>
-          this.parcelService
-            .getParcel(
-              parcel.id,
-            ),
-      ),
-    )
-      .pipe(
-        catchError(
-          error => {
-
-            this.errorMessage.set(
-              error?.error?.error
-              ?? 'Could not load analytics data.',
-            );
-
-            return of(
-              [] as ParcelDetails[],
-            );
-          },
-        ),
-
-        finalize(
-          () => {
-
-            this.loadingPlans.set(
-              false,
-            );
-          },
-        ),
-      )
-      .subscribe(
-        parcels => {
-
-          if (
-            this.errorMessage()
-          ) {
-            return;
-          }
-
-          this.buildPlanGroups(
-            parcels,
-          );
-        },
-      );
-  }
-
-
-  private buildPlanGroups(
-    parcels: ParcelDetails[],
-  ): void {
-
-    const groups:
-      AnalyticsPlanGroup[] =
-      parcels.map(
-        parcel => ({
-          parcel,
-
-          seasons: [
-            ...parcel.seasons,
-          ],
-        }),
-      );
-
-
-    this.planGroups.set(
-      groups,
-    );
-
-
-    const selection:
-      Record<
-        number,
-        number | null
-      > = {};
-
-
-    for (
-      const group
-      of groups
-    ) {
-
-      selection[
-        group.parcel.id
-      ] =
-        group.seasons.length
-          === 1
-          ? group.seasons[0].id
-          : null;
-    }
-
-
-    this.selectedSeasonIds.set(
-      selection,
-    );
-
-
-    this.loadOverviewDetails();
-
-    this.initializeComparison();
-  }
-
-
-  private loadOverviewDetails(): void {
-
-    const ids =
-      this.selectedIds();
-
-    const requestVersion =
-      ++this.overviewRequestVersion;
-
-
-    this.detailBySeason.set({});
-
-    this.overviewWarning.set(
-      null,
-    );
-
-
-    if (
-      ids.length === 0
-    ) {
-
-      this.loadingOverview.set(
-        false,
-      );
-
-      this.scheduleChartRender();
-
-      return;
-    }
-
-
-    this.loadingOverview.set(
-      true,
-    );
-
-
-    forkJoin(
-      ids.map(
-        id =>
-          this.sustainabilityService
-            .getParcelSeasonSustainability(
-              id,
-            )
-            .pipe(
-              catchError(
-                () => of(null),
-              ),
-            ),
-      ),
-    )
-      .pipe(
-        finalize(
-          () => {
-
-            if (
-              requestVersion
-              === this.overviewRequestVersion
-            ) {
-
-              this.loadingOverview.set(
-                false,
-              );
-            }
-          },
-        ),
-      )
-      .subscribe(
-        results => {
-
-          if (
-            requestVersion
-            !== this.overviewRequestVersion
-          ) {
-            return;
-          }
-
-
-          const mapped:
-            Record<
-              number,
-              ParcelSeasonSustainabilityResult
-            > = {};
-
-
-          let failed = 0;
-
-
-          results.forEach(
-            (
-              result,
-              index,
-            ) => {
-
-              const id =
-                ids[index];
-
-              if (
-                result
-                && id !== undefined
-              ) {
-
-                mapped[id] =
-                  result;
-
-              } else {
-
-                failed += 1;
-              }
-            },
-          );
-
-
-          this.detailBySeason.set(
-            mapped,
-          );
-
-
-          if (
-            failed > 0
-          ) {
-
-            this.overviewWarning.set(
-              'Some selected plans could not be included in the analytics calculation.',
-            );
-          }
-
-
-          this.scheduleChartRender();
-        },
-      );
-  }
-
-
-  onPlanChange(
-    parcelId: number,
+  changePlan(
+    side: 'a' | 'b',
     event: Event,
   ): void {
+    const id = this.selectId(event);
 
-    const value =
-      this.selectNumber(
-        event,
-      );
+    if (side === 'a') {
+      this.planAId.set(id);
+    } else {
+      this.planBId.set(id);
+    }
 
+    this.loadComparison();
+  }
 
-    this.selectedSeasonIds.update(
-      current => ({
-        ...current,
+private chooseParcel(id: number | null): void {
+  this.parcelId.set(id);
 
-        [parcelId]:
-          value,
+  const plans = this.plans();
+
+  this.planAId.set(plans.length === 1 ? plans[0].id : null);
+  this.planBId.set(null);
+
+  this.loadComparison();
+}
+
+  private loadComparison(): void {
+    const version = ++this.comparisonVersion;
+
+    this.resultA.set(null);
+    this.resultB.set(null);
+    this.comparisonError.set(null);
+    this.comparing.set(false);
+
+    const a = this.planA();
+    const b = this.planB();
+
+    if (!a || a.id === b?.id) {
+      return;
+    }
+
+    this.comparing.set(true);
+
+    this.subscriptions.add(
+      forkJoin([
+        this.sustainabilityApi
+          .getParcelSeasonSustainability(a.id)
+          .pipe(catchError(() => of(null))),
+
+        b
+          ? this.sustainabilityApi
+              .getParcelSeasonSustainability(b.id)
+              .pipe(catchError(() => of(null)))
+          : of(null),
+      ]).subscribe(([ra, rb]) => {
+        if (version !== this.comparisonVersion) {
+          return;
+        }
+
+        this.resultA.set(ra);
+        this.resultB.set(rb);
+        this.comparing.set(false);
+
+        if (!ra || (b && !rb)) {
+          this.comparisonError.set(
+            'Some selected plan data could not be loaded.',
+          );
+        }
       }),
     );
-
-
-    this.loadOverviewDetails();
   }
 
+  private complete(
+    result: ParcelSeasonSustainabilityResult | null,
+  ): Detail | null {
+    return result?.calculation_status === 'complete'
+      ? result
+      : null;
+  }
 
-  selectedPlanId(
-    parcelId: number,
-  ): number | null {
-
+  private numeric(
+    value: number | undefined,
+  ): MetricValue {
     return (
-      this.selectedSeasonIds()[
-      parcelId
-      ]
-      ?? null
-    );
-  }
-
-
-  detailForSeason(
-    seasonId: number,
-  ):
-    ParcelSeasonSustainabilityResult
-    | null {
-
-    return (
-      this.detailBySeason()[
-      seasonId
-      ]
-      ?? null
-    );
-  }
-
-
-  private initializeComparison(): void {
-
-    const group =
-      this.comparisonGroups()[0];
-
-
-    if (!group) {
-
-      this.comparisonParcelId.set(
-        null,
-      );
-
-      this.comparisonSeasonAId.set(
-        null,
-      );
-
-      this.comparisonSeasonBId.set(
-        null,
-      );
-
-      this.comparisonA.set(
-        null,
-      );
-
-      this.comparisonB.set(
-        null,
-      );
-
-      return;
-    }
-
-
-    this.comparisonParcelId.set(
-      group.parcel.id,
-    );
-
-    this.comparisonSeasonAId.set(
-      group.seasons[0].id,
-    );
-
-    this.comparisonSeasonBId.set(
-      group.seasons[1].id,
-    );
-
-
-    this.loadComparisonDetails();
-  }
-
-
-  onComparisonParcelChange(
-    event: Event,
-  ): void {
-
-    const parcelId =
-      this.selectNumber(
-        event,
-      );
-
-
-    this.comparisonParcelId.set(
-      parcelId,
-    );
-
-
-    const group =
-      this.comparisonGroups()
-        .find(
-          item =>
-            item.parcel.id
-            === parcelId,
-        );
-
-
-    if (
-      !group
-      || group.seasons.length < 2
-    ) {
-
-      this.comparisonSeasonAId.set(
-        null,
-      );
-
-      this.comparisonSeasonBId.set(
-        null,
-      );
-
-      return;
-    }
-
-
-    this.comparisonSeasonAId.set(
-      group.seasons[0].id,
-    );
-
-    this.comparisonSeasonBId.set(
-      group.seasons[1].id,
-    );
-
-
-    this.loadComparisonDetails();
-  }
-
-
-  onComparisonAChange(
-    event: Event,
-  ): void {
-
-    this.comparisonSeasonAId.set(
-      this.selectNumber(
-        event,
-      ),
-    );
-
-    this.loadComparisonDetails();
-  }
-
-
-  onComparisonBChange(
-    event: Event,
-  ): void {
-
-    this.comparisonSeasonBId.set(
-      this.selectNumber(
-        event,
-      ),
-    );
-
-    this.loadComparisonDetails();
-  }
-
-
-  private loadComparisonDetails(): void {
-
-    const seasonAId =
-      this.comparisonSeasonAId();
-
-    const seasonBId =
-      this.comparisonSeasonBId();
-
-
-    const requestVersion =
-      ++this.comparisonRequestVersion;
-
-
-    this.comparisonA.set(
-      null,
-    );
-
-    this.comparisonB.set(
-      null,
-    );
-
-    this.comparisonErrorMessage.set(
-      null,
-    );
-
-
-    if (
-      seasonAId === null
-      || seasonBId === null
-      || seasonAId === seasonBId
-    ) {
-
-      this.loadingComparison.set(
-        false,
-      );
-
-      return;
-    }
-
-
-    this.loadingComparison.set(
-      true,
-    );
-
-
-    forkJoin([
-      this.sustainabilityService
-        .getParcelSeasonSustainability(
-          seasonAId,
-        )
-        .pipe(
-          catchError(
-            () => of(null),
-          ),
-        ),
-
-      this.sustainabilityService
-        .getParcelSeasonSustainability(
-          seasonBId,
-        )
-        .pipe(
-          catchError(
-            () => of(null),
-          ),
-        ),
-    ])
-      .pipe(
-        finalize(
-          () => {
-
-            if (
-              requestVersion
-              === this.comparisonRequestVersion
-            ) {
-
-              this.loadingComparison.set(
-                false,
-              );
-            }
-          },
-        ),
-      )
-      .subscribe(
-        (
-          [
-            resultA,
-            resultB,
-          ],
-        ) => {
-
-          if (
-            requestVersion
-            !== this.comparisonRequestVersion
-          ) {
-            return;
-          }
-
-
-          this.comparisonA.set(
-            resultA,
-          );
-
-          this.comparisonB.set(
-            resultB,
-          );
-
-
-          if (
-            !resultA
-            || !resultB
-          ) {
-
-            this.comparisonErrorMessage.set(
-              'One or both plans could not be loaded.',
-            );
-          }
-
-
-          this.scheduleChartRender();
-        },
-      );
-  }
-
-
-  private weightedAverage(
-    details:
-      CompleteParcelSeasonSustainabilityResult[],
-
-    value:
-      (
-        detail:
-          CompleteParcelSeasonSustainabilityResult,
-      ) => number,
-  ): number | null {
-
-    const totalArea =
-      details.reduce(
-        (
-          total,
-          detail,
-        ) =>
-          total
-          + detail.parcel
-            .official_area_ha,
-        0,
-      );
-
-
-    if (
-      totalArea <= 0
-    ) {
-      return null;
-    }
-
-
-    return (
-      details.reduce(
-        (
-          total,
-          detail,
-        ) => {
-
-          return (
-            total
-            + value(
-              detail,
-            )
-            * detail.parcel
-              .official_area_ha
-          );
-        },
-        0,
-      )
-      / totalArea
-    );
-  }
-
-
-  private calculateChange(
-    oldValue: number,
-    newValue: number,
-  ): number | null {
-
-    if (
-      oldValue === 0
-    ) {
-
-      if (
-        newValue === 0
-      ) {
-        return 0;
-      }
-
-      return null;
-    }
-
-
-    return (
-      (
-        newValue
-        - oldValue
-      )
-      / oldValue
-      * 100
-    );
-  }
-
-
-  formatChange(
-    value: number | null,
-  ): string {
-
-    if (
-      value === null
-    ) {
-      return '—';
-    }
-
-
-    const prefix =
-      value > 0
-        ? '+'
-        : '';
-
-
-    return (
-      `${prefix}${value.toFixed(1)}%`
-    );
-  }
-
-
-  formatNumber(
-    value: number,
-    digits = 1,
-  ): string {
-
-    return value.toFixed(
-      digits,
-    );
-  }
-
-
-  formatCarbonTotal(
-    value: number | null,
-  ): string {
-
-    if (
-      value === null
-    ) {
-      return '—';
-    }
-
-
-    if (
-      value >= 1000
-    ) {
-
-      return (
-        `${(
-          value / 1000
-        ).toFixed(2)} t`
-      );
-    }
-
-
-    return (
-      `${value.toFixed(0)} kg`
-    );
-  }
-
-
-  score100(
-    value: number,
-  ): number {
-
-    return Math.round(
-      value * 100,
-    );
-  }
-
-
-  formatCrop(
-    crop: string,
-  ): string {
-
-    const labels:
-      Record<string, string> = {
-
-      wheat:
-        'Wheat',
-
-      barley:
-        'Barley',
-
-      maize:
-        'Maize',
-    };
-
-
-    return (
-      labels[crop]
-      ?? crop
-    );
-  }
-
-
-  formatStrategy(
-    strategy: string,
-  ): string {
-
-    const labels:
-      Record<string, string> = {
-
-      conventional:
-        'Conventional',
-
-      reduced:
-        'Reduced',
-    };
-
-
-    return (
-      labels[strategy]
-      ?? strategy
-    );
-  }
-
-
-  formatPlanLabel(
-    season: ParcelSeason,
-  ): string {
-
-    return (
-      `${season.plan_name} — `
-      + `${this.formatCrop(
-        season.crop,
-      )} · `
-      + `${this.formatStrategy(
-        season.farming_strategy,
-      )}`
-    );
-  }
-
-  private planName(
-    detail:
-      CompleteParcelSeasonSustainabilityResult,
-  ): string {
-
-    return (
-      `${detail.season.plan_name} — `
-      + `${this.formatCrop(
-        detail.season.crop,
-      )} · `
-      + `${this.formatStrategy(
-        detail.season
-          .farming_strategy,
-      )}`
-    );
-  }
-
-
-  private selectNumber(
-    event: Event,
-  ): number | null {
-
-    const target =
-      event.target;
-
-
-    if (
-      !(
-        target
-        instanceof HTMLSelectElement
-      )
-    ) {
-      return null;
-    }
-
-
-    if (
-      target.value === ''
-    ) {
-      return null;
-    }
-
-
-    const value =
-      Number(
-        target.value,
-      );
-
-
-    return Number.isFinite(
-      value,
+      typeof value === 'number' &&
+      Number.isFinite(value)
     )
       ? value
       : null;
   }
 
+  private selectId(event: Event): number | null {
+    const target = event.target;
 
-  private scheduleChartRender(): void {
+    if (
+      !(target instanceof HTMLSelectElement) ||
+      !target.value
+    ) {
+      return null;
+    }
 
-    setTimeout(
-      () => {
-        this.renderActiveCharts();
-      },
+    const id = Number(target.value);
+    return Number.isFinite(id) ? id : null;
+  }
+
+  private axisMax(values: MetricValue[]): number {
+    const max = Math.max(
       0,
+      ...values.map(value => value ?? 0),
     );
-  }
 
-
-  private renderActiveCharts(): void {
-
-    this.destroyCharts();
-
-
-    if (
-      this.activeTab()
-      === 'overview'
-    ) {
-
-      this.renderYieldScatter();
-
-      this.renderCropPerformance();
-
-      return;
+    if (!max) {
+      return 1;
     }
 
+    const step =
+      Math.pow(10, Math.floor(Math.log10(max))) / 2;
 
-    this.renderStrategyProfile();
-
-    this.renderTradeoff();
+    return Math.ceil(max / step) * step;
   }
 
-
-  private renderYieldScatter(): void {
-
-    const canvas =
-      this.yieldScatterCanvas
-        ?.nativeElement;
-
-    const details =
-      this.overviewCompleteDetails();
-
-
-    if (
-      !canvas
-      || details.length === 0
-    ) {
-      return;
-    }
-
-
-    const config:
-      ChartConfiguration<
-        'scatter',
-        {
-          x: number;
-          y: number;
-        }[],
-        unknown
-      > = {
-
-      type:
-        'scatter',
-
-      data: {
-        datasets: [
-          {
-            label:
-              'Parcels',
-
-            data:
-              details.map(
-                detail => ({
-                  x:
-                    detail.yield
-                      .expected_yield_t_ha,
-
-                  y:
-                    detail.sustainability
-                      .sustainability_score
-                    * 100,
-                }),
-              ),
-
-            backgroundColor:
-              details.map(
-                detail =>
-                  this.cropColor(
-                    detail.season.crop,
-                  ),
-              ),
-
-            borderColor:
-              '#ffffff',
-
-            borderWidth:
-              2,
-
-            pointRadius:
-              8,
-
-            pointHoverRadius:
-              10,
-          },
-        ],
-      },
-
-      options: {
-        responsive:
-          true,
-
-        maintainAspectRatio:
-          false,
-
-        plugins: {
-          legend: {
-            display:
-              false,
-          },
-
-          tooltip: {
-            callbacks: {
-              label:
-                context => {
-
-                  const detail =
-                    details[
-                    context.dataIndex
-                    ];
-
-
-                  if (!detail) {
-                    return '';
-                  }
-
-
-                  return (
-                    `${detail.parcel.name}: `
-                    + `${detail.yield.expected_yield_t_ha.toFixed(2)} t/ha, `
-                    + `${Math.round(
-                      detail.sustainability
-                        .sustainability_score
-                      * 100,
-                    )}/100`
-                  );
-                },
-            },
-          },
-        },
-
-        scales: {
-          x: {
-            title: {
-              display:
-                true,
-
-              text:
-                'Expected yield (t/ha)',
-            },
-
-            grid: {
-              color:
-                'rgba(70, 90, 78, 0.08)',
-            },
-          },
-
-          y: {
-            min:
-              0,
-
-            max:
-              100,
-
-            title: {
-              display:
-                true,
-
-              text:
-                'Sustainability score',
-            },
-
-            grid: {
-              color:
-                'rgba(70, 90, 78, 0.08)',
-            },
-          },
-        },
-      },
-    };
-
-
-    this.yieldScatterChart =
-      new Chart(
-        canvas,
-        config,
-      );
-  }
-
-
-  private renderCropPerformance(): void {
-
-    const canvas =
-      this.cropPerformanceCanvas
-        ?.nativeElement;
-
-    const crops =
-      this.cropPerformance();
-
-
-    if (
-      !canvas
-      || crops.length === 0
-    ) {
-      return;
-    }
-
-
-    const config:
-      ChartConfiguration<
-        'bar',
-        number[],
-        string
-      > = {
-
-      type:
-        'bar',
-
-      data: {
-        labels:
-          crops.map(
-            crop =>
-              this.formatCrop(
-                crop.crop,
-              ),
-          ),
-
-        datasets: [
-          {
-            label:
-              'Average yield',
-
-            data:
-              crops.map(
-                crop =>
-                  crop.averageYield,
-              ),
-
-            backgroundColor:
-              crops.map(
-                crop =>
-                  this.cropColor(
-                    crop.crop,
-                  ),
-              ),
-
-            borderRadius:
-              8,
-
-            borderSkipped:
-              false,
-          },
-        ],
-      },
-
-      options: {
-        responsive:
-          true,
-
-        maintainAspectRatio:
-          false,
-
-        plugins: {
-          legend: {
-            display:
-              false,
-          },
-
-          tooltip: {
-            callbacks: {
-              label:
-                context => {
-
-                  const crop =
-                    crops[
-                    context.dataIndex
-                    ];
-
-
-                  if (!crop) {
-                    return '';
-                  }
-
-
-                  return (
-                    `${crop.averageYield.toFixed(2)} t/ha `
-                    + `across ${crop.area.toFixed(1)} ha`
-                  );
-                },
-            },
-          },
-        },
-
-        scales: {
-          x: {
-            grid: {
-              display:
-                false,
-            },
-          },
-
-          y: {
-            beginAtZero:
-              true,
-
-            title: {
-              display:
-                true,
-
-              text:
-                'Average expected yield (t/ha)',
-            },
-
-            grid: {
-              color:
-                'rgba(70, 90, 78, 0.08)',
-            },
-          },
-        },
-      },
-    };
-
-
-    this.cropPerformanceChart =
-      new Chart(
-        canvas,
-        config,
-      );
-  }
-
-
-  private renderStrategyProfile(): void {
-
-    const canvas =
-      this.strategyProfileCanvas
-        ?.nativeElement;
-
-    const a =
-      this.comparisonAComplete();
-
-    const b =
-      this.comparisonBComplete();
-
-
-    if (
-      !canvas
-      || !a
-      || !b
-    ) {
-      return;
-    }
-
-
-    const yieldA =
-      a.yield
-        .expected_yield_t_ha;
-
-    const yieldB =
-      b.yield
-        .expected_yield_t_ha;
-
-    const maxYield =
-      Math.max(
-        yieldA,
-        yieldB,
-      );
-
-
-    const carbonA =
-      a.sustainability
-        .ghg
-        .fertilizer_emission_kg_co2e_ha;
-
-    const carbonB =
-      b.sustainability
-        .ghg
-        .fertilizer_emission_kg_co2e_ha;
-
-
-    const config:
-      ChartConfiguration<
-        'bar',
-        number[],
-        string
-      > = {
-
-      type:
-        'bar',
-
-      data: {
-        labels: [
-          'Yield performance',
-          'Sustainability',
-          'Carbon performance',
-        ],
-
-        datasets: [
-          {
-            label:
-              'Plan A',
-
-            data: [
-              maxYield > 0
-                ? yieldA
-                / maxYield
-                * 100
-                : 0,
-
-              a.sustainability
-                .sustainability_score
-              * 100,
-
-              this.carbonPerformance(
-                carbonA,
-                carbonB,
-              ),
-            ],
-
-            backgroundColor:
-              '#3b82f6',
-
-            borderRadius:
-              7,
-
-            borderSkipped:
-              false,
-          },
-
-          {
-            label:
-              'Plan B',
-
-            data: [
-              maxYield > 0
-                ? yieldB
-                / maxYield
-                * 100
-                : 0,
-
-              b.sustainability
-                .sustainability_score
-              * 100,
-
-              this.carbonPerformance(
-                carbonB,
-                carbonA,
-              ),
-            ],
-
-            backgroundColor:
-              '#f97316',
-
-            borderRadius:
-              7,
-
-            borderSkipped:
-              false,
-          },
-        ],
-      },
-
-      options: {
-        responsive:
-          true,
-
-        maintainAspectRatio:
-          false,
-
-        plugins: {
-          legend: {
-            position:
-              'top',
-          },
-        },
-
-        scales: {
-          x: {
-            grid: {
-              display:
-                false,
-            },
-          },
-
-          y: {
-            min:
-              0,
-
-            max:
-              100,
-
-            title: {
-              display:
-                true,
-
-              text:
-                'Decision performance index',
-            },
-
-            grid: {
-              color:
-                'rgba(70, 90, 78, 0.08)',
-            },
-          },
-        },
-      },
-    };
-
-
-    this.strategyProfileChart =
-      new Chart(
-        canvas,
-        config,
-      );
-  }
-
-
-  private renderTradeoff(): void {
-
-    const canvas =
-      this.tradeoffCanvas
-        ?.nativeElement;
-
-    const a =
-      this.comparisonAComplete();
-
-    const b =
-      this.comparisonBComplete();
-
-
-    if (
-      !canvas
-      || !a
-      || !b
-    ) {
-      return;
-    }
-
-
-    const config:
-      ChartConfiguration<
-        'scatter',
-        {
-          x: number;
-          y: number;
-        }[],
-        unknown
-      > = {
-
-      type:
-        'scatter',
-
-      data: {
-        datasets: [
-          {
-            label:
-              'Plan A',
-
-            data: [
-              {
-                x:
-                  a.yield
-                    .expected_yield_t_ha,
-
-                y:
-                  a.sustainability
-                    .sustainability_score
-                  * 100,
-              },
-            ],
-
-            backgroundColor:
-              '#3b82f6',
-
-            borderColor:
-              '#ffffff',
-
-            borderWidth:
-              2,
-
-            pointRadius:
-              10,
-
-            pointHoverRadius:
-              12,
-          },
-
-          {
-            label:
-              'Plan B',
-
-            data: [
-              {
-                x:
-                  b.yield
-                    .expected_yield_t_ha,
-
-                y:
-                  b.sustainability
-                    .sustainability_score
-                  * 100,
-              },
-            ],
-
-            backgroundColor:
-              '#f97316',
-
-            borderColor:
-              '#ffffff',
-
-            borderWidth:
-              2,
-
-            pointRadius:
-              10,
-
-            pointHoverRadius:
-              12,
-          },
-        ],
-      },
-
-      options: {
-        responsive:
-          true,
-
-        maintainAspectRatio:
-          false,
-
-        plugins: {
-          legend: {
-            position:
-              'top',
-          },
-
-          tooltip: {
-            callbacks: {
-              label:
-                context => {
-
-                  const detail =
-                    context.datasetIndex
-                      === 0
-                      ? a
-                      : b;
-
-
-                  return (
-                    `${this.planName(
-                      detail,
-                    )}: `
-                    + `${detail.yield.expected_yield_t_ha.toFixed(2)} t/ha, `
-                    + `${Math.round(
-                      detail.sustainability
-                        .sustainability_score
-                      * 100,
-                    )}/100`
-                  );
-                },
-            },
-          },
-        },
-
-        scales: {
-          x: {
-            title: {
-              display:
-                true,
-
-              text:
-                'Expected yield (t/ha)',
-            },
-
-            grid: {
-              color:
-                'rgba(70, 90, 78, 0.08)',
-            },
-          },
-
-          y: {
-            min:
-              0,
-
-            max:
-              100,
-
-            title: {
-              display:
-                true,
-
-              text:
-                'Sustainability score',
-            },
-
-            grid: {
-              color:
-                'rgba(70, 90, 78, 0.08)',
-            },
-          },
-        },
-      },
-    };
-
-
-    this.tradeoffChart =
-      new Chart(
-        canvas,
-        config,
-      );
-  }
-
-
-  private carbonPerformance(
-    value: number,
-    otherValue: number,
+  width(
+    value: MetricValue,
+    max: number,
   ): number {
+    return value === null
+      ? 0
+      : Math.max(0, Math.min(100, value / max * 100));
+  }
 
-    if (
-      value === 0
-      && otherValue === 0
-    ) {
-      return 100;
+  number(
+    value: MetricValue,
+    digits = 2,
+  ): string {
+    return value === null
+      ? '—'
+      : value.toLocaleString('en-GB', {
+          maximumFractionDigits: digits,
+        });
+  }
+
+  difference(metric: Metric): string {
+    if (metric.a === null || metric.b === null) {
+      return '—';
     }
 
-
-    if (
-      value === 0
-    ) {
-      return 100;
-    }
-
-
-    const minimum =
-      Math.min(
-        value,
-        otherValue,
-      );
-
-
-    if (
-      minimum === 0
-    ) {
-      return 0;
-    }
-
+    const delta =
+      Math.round((metric.b - metric.a) * 100) / 100;
 
     return (
-      minimum
-      / value
-      * 100
+      `${delta > 0 ? '+' : ''}${this.number(delta)} ` +
+      metric.deltaUnit
     );
   }
 
-
-  private cropColor(
-    crop: string,
-  ): string {
-
-    const colors:
-      Record<string, string> = {
-
-      wheat:
-        '#f59e0b',
-
-      barley:
-        '#8b5cf6',
-
-      maize:
-        '#22a35a',
+  crop(value: string): string {
+    const labels: Record<string, string> = {
+      wheat: 'Wheat',
+      barley: 'Barley',
+      maize: 'Maize',
     };
 
+    return labels[value] ?? value;
+  }
 
+  strategy(value: string): string {
+    return value === 'reduced'
+      ? 'Reduced'
+      : 'Conventional';
+  }
+
+  machine(value: string | null): string {
+    return value
+      ? value.charAt(0).toUpperCase() + value.slice(1)
+      : 'Not specified';
+  }
+
+  quantity(value: number | null): string {
+    return value === null
+      ? 'Not specified'
+      : `${this.number(value)} kg/ha`;
+  }
+
+  planLabel(plan: ParcelSeason): string {
     return (
-      colors[crop]
-      ?? '#3b82f6'
+      `${plan.plan_name} · ` +
+      `${this.crop(plan.crop)} · ` +
+      `${plan.season_start_year} · ` +
+      this.strategy(plan.farming_strategy)
     );
   }
 
+  source(detail: Detail | null): string {
+    if (!detail) {
+      return 'Unavailable';
+    }
 
-  private destroyCharts(): void {
+    return detail.yield.source === 'current_simulation'
+      ? 'Current simulation'
+      : 'Regional recent yield';
+  }
 
-    this.yieldScatterChart
-      ?.destroy();
-
-    this.cropPerformanceChart
-      ?.destroy();
-
-    this.strategyProfileChart
-      ?.destroy();
-
-    this.tradeoffChart
-      ?.destroy();
-
-
-    this.yieldScatterChart =
-      null;
-
-    this.cropPerformanceChart =
-      null;
-
-    this.strategyProfileChart =
-      null;
-
-    this.tradeoffChart =
-      null;
+  missing(
+    result: ParcelSeasonSustainabilityResult | null,
+  ): string {
+    return result?.calculation_status === 'incomplete'
+      ? result.missing_inputs
+          .map(value => value.replaceAll('_', ' '))
+          .join(', ')
+      : '';
   }
 }

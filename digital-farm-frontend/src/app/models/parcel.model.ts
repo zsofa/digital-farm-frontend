@@ -1,13 +1,9 @@
-import {
-  SimulationSummary,
-} from './simulation.model';
-
+import { SimulationSummary } from './simulation.model';
 
 export interface PolygonGeometry {
   type: 'Polygon';
   coordinates: number[][][];
 }
-
 
 export interface ParcelSummary {
   id: number;
@@ -19,20 +15,15 @@ export interface ParcelSummary {
   deactivated_at: string | null;
 }
 
-
 export interface ParcelSoil {
-  source:
-    | 'soilgrids'
-    | 'user';
+  source: 'soilgrids' | 'user';
 
   soil_ph: number;
   soil_soc_g_kg: number;
   soil_clay_pct: number;
 
-  measured_at:
-    string | null;
+  measured_at: string | null;
 }
-
 
 export interface ParcelSeason {
   id: number;
@@ -42,44 +33,25 @@ export interface ParcelSeason {
 
   season_start_year: number;
 
-  crop:
-    | 'wheat'
-    | 'barley'
-    | 'maize';
+  crop: 'wheat' | 'barley' | 'maize';
 
-  farming_strategy:
-    | 'conventional'
-    | 'reduced';
+  farming_strategy: 'conventional' | 'reduced';
 
   is_irrigated: boolean;
 
-  machine_use:
-    | 'low'
-    | 'medium'
-    | 'high'
-    | null;
+  machine_use: 'low' | 'medium' | 'high' | null;
 
-  fertilizer_type:
-    | 'AN'
-    | 'urea'
-    | 'CAN'
-    | null;
+  fertilizer_type: 'AN' | 'urea' | 'CAN' | null;
 
-  fertilizer_quantity_kg_ha:
-    number | null;
+  fertilizer_quantity_kg_ha: number | null;
 
   created_at: string;
   updated_at: string;
 }
 
-
-export interface ParcelSeasonDetails
-  extends ParcelSeason {
-
-  simulations:
-    SimulationSummary[];
+export interface ParcelSeasonDetails extends ParcelSeason {
+  simulations: SimulationSummary[];
 }
-
 
 export interface ParcelDetails {
   id: number;
@@ -91,26 +63,29 @@ export interface ParcelDetails {
 
   county_name: string;
 
-  geometry:
-    PolygonGeometry;
+  geometry: PolygonGeometry;
 
-  soil:
-    ParcelSoil | null;
+  soil: ParcelSoil | null;
 
-  seasons:
-    ParcelSeason[];
+  soilgrids_reference?: {
+    source: 'soilgrids';
+    soil_ph: number | null;
+    soil_soc_g_kg: number | null;
+    soil_clay_pct: number | null;
+    measured_at: string | null;
+  } | null;
+
+  seasons: ParcelSeason[];
 
   created_at: string;
   updated_at: string;
 
   is_active: boolean;
 
-  deactivated_at:
-    string | null;
+  deactivated_at: string | null;
 
   revision: number;
 }
-
 
 export interface ParcelCreateRequest {
   name: string;
@@ -118,18 +93,15 @@ export interface ParcelCreateRequest {
   geometry: PolygonGeometry;
 }
 
-
 export interface ParcelUpdateRequest {
   name: string;
 }
-
 
 export interface ParcelRequest {
   name: string;
   official_area_ha: number;
   geometry: PolygonGeometry;
 }
-
 
 export interface ParcelSoilRequest {
   soil_ph: number;
@@ -138,6 +110,5 @@ export interface ParcelSoilRequest {
 
   soil_clay_pct: number;
 
-  measured_at:
-    string | null;
+  measured_at: string | null;
 }

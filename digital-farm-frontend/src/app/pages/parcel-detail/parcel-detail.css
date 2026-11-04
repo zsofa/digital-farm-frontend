@@ -545,3 +545,46 @@
     grid-template-columns: 1fr;
   }
 }
+
+.soil-field input.soil-input-invalid {
+  border-color: #c73535;
+  background: #fffafa;
+}
+
+.soil-field input.soil-input-invalid:focus {
+  border-color: #c73535;
+  outline: 2px solid rgb(199 53 53 / 15%);
+  outline-offset: 1px;
+}
+
+.soil-validation {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin-top: 7px;
+  color: #b42323;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.soil-info-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  margin-top: 1px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  font-family: Georgia, serif;
+  font-size: 12px;
+  font-weight: 700;
+  font-style: normal;
+  line-height: 1;
+}
+
+.soil-save-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

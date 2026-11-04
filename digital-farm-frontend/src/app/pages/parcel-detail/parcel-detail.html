@@ -1,767 +1,445 @@
 <section class="parcel-page">
-
-    @if (loading()) {
-
+  @if (loading()) {
     <div class="state-card">
-        Loading parcel details...
+      Loading parcel details...
     </div>
-
-    } @else if (errorMessage()) {
-
+  } @else if (errorMessage() && !parcel()) {
     <div class="state-card error">
-        {{ errorMessage() }}
+      {{ errorMessage() }}
     </div>
-
-    } @else if (parcel(); as currentParcel) {
+  } @else if (parcel(); as currentParcel) {
+    @if (errorMessage()) {
+      <div class="state-card error" role="alert">
+        {{ errorMessage() }}
+      </div>
+    }
 
     <div class="page-header">
+      <div>
+        <button
+          type="button"
+          class="back-button"
+          (click)="goBack()"
+        >
+          ← Back to dashboard
+        </button>
 
-        <div>
+        <div class="parcel-title-row">
+          <span class="eyebrow">Parcel</span>
 
-            <button
-                type="button"
-                class="back-button"
-                (click)="goBack()"
-            >
-                ← Back to dashboard
-            </button>
-
-
-            <div class="parcel-title-row">
-
-                <span class="eyebrow">
-                    Parcel
-                </span>
-
-
-                <span
-                    class="status-badge"
-                    [class.inactive]="
-                        !currentParcel.is_active
-                    "
-                >
-                    {{
-                        currentParcel.is_active
-                            ? 'Active'
-                            : 'Inactive'
-                    }}
-                </span>
-
-            </div>
-
-
-            <h1>
-                {{ currentParcel.name }}
-            </h1>
-
-
-            <p>
-                {{ currentParcel.county_name }}
-            </p>
-
+          <span
+            class="status-badge"
+            [class.inactive]="!currentParcel.is_active"
+          >
+            {{
+              currentParcel.is_active
+                ? 'Active'
+                : 'Inactive'
+            }}
+          </span>
         </div>
 
+        <h1>{{ currentParcel.name }}</h1>
+        <p>{{ currentParcel.county_name }}</p>
+      </div>
 
-        <div class="parcel-actions">
+      <div class="parcel-actions">
+        <a
+          class="edit-button"
+          [routerLink]="[
+            '/parcels',
+            currentParcel.id,
+            'edit'
+          ]"
+        >
+          Edit parcel
+        </a>
 
-            <a
-                class="edit-button"
-                [routerLink]="[
-                    '/parcels',
-                    currentParcel.id,
-                    'edit'
-                ]"
-            >
-                Edit parcel
-            </a>
+        <button
+          type="button"
+          class="status-button"
+          [disabled]="changingStatus()"
+          (click)="toggleActiveStatus()"
+        >
+          @if (changingStatus()) {
+            Updating...
+          } @else if (currentParcel.is_active) {
+            Set inactive
+          } @else {
+            Reactivate parcel
+          }
+        </button>
 
-
-            <button
-                type="button"
-                class="status-button"
-                [disabled]="changingStatus()"
-                (click)="toggleActiveStatus()"
-            >
-
-                @if (changingStatus()) {
-
-                Updating...
-
-                } @else if (
-                    currentParcel.is_active
-                ) {
-
-                Set inactive
-
-                } @else {
-
-                Reactivate parcel
-
-                }
-
-            </button>
-
-
-            <button
-                type="button"
-                class="delete-button"
-                [disabled]="deleting()"
-                (click)="deleteParcel()"
-            >
-                {{
-                    deleting()
-                        ? 'Deleting...'
-                        : 'Delete parcel'
-                }}
-            </button>
-
-        </div>
-
+        <button
+          type="button"
+          class="delete-button"
+          [disabled]="deleting()"
+          (click)="deleteParcel()"
+        >
+          {{
+            deleting()
+              ? 'Deleting...'
+              : 'Delete parcel'
+          }}
+        </button>
+      </div>
     </div>
-
 
     @if (!currentParcel.is_active) {
-
-    <div class="inactive-banner">
-
+      <div class="inactive-banner">
         <div>
+          <strong>This parcel is inactive.</strong>
 
-            <strong>
-                This parcel is inactive.
-            </strong>
-
-            <span>
-                Historical seasons and simulations
-                remain available, but new farming
-                activity should not be added until
-                the parcel is reactivated.
-            </span>
-
+          <span>
+            Historical seasons and simulations remain available,
+            but new farming activity should not be added until
+            the parcel is reactivated.
+          </span>
         </div>
-
-    </div>
-
+      </div>
     }
-
 
     <div class="summary-grid">
+      <article class="summary-card">
+        <span>Official area</span>
 
-        <article class="summary-card">
+        <strong>
+          {{ currentParcel.official_area_ha }} ha
+        </strong>
+      </article>
 
-            <span>
-                Official area
-            </span>
+      <article class="summary-card">
+        <span>Soil data source</span>
 
-            <strong>
-                {{
-                    currentParcel
-                        .official_area_ha
-                }}
-                ha
-            </strong>
+        @if (currentParcel.soil; as soil) {
+          <strong>
+            {{ formatSoilSource(soil.source) }}
+          </strong>
+        } @else {
+          <strong>Not available</strong>
+        }
+      </article>
 
-        </article>
+      <article class="summary-card">
+        <span>Growing plans</span>
 
-
-        <article class="summary-card">
-
-            <span>
-                Soil data source
-            </span>
-
-            @if (
-                currentParcel.soil;
-                as soil
-            ) {
-
-            <strong>
-                {{
-                    formatSoilSource(
-                        soil.source
-                    )
-                }}
-            </strong>
-
-            } @else {
-
-            <strong>
-                Not available
-            </strong>
-
-            }
-
-        </article>
-
-
-        <article class="summary-card">
-
-            <span>
-                Growing plans
-            </span>
-
-            <strong>
-                {{
-                    currentParcel
-                        .seasons.length
-                }}
-            </strong>
-
-        </article>
-
+        <strong>
+          {{ currentParcel.seasons.length }}
+        </strong>
+      </article>
     </div>
-
 
     <div class="content-grid">
+      <section class="content-card">
+        <div class="section-header">
+          <div>
+            <span class="section-label">Soil</span>
+            <h2>Soil properties</h2>
+          </div>
 
-        <section class="content-card">
+          @if (currentParcel.soil; as soil) {
+            <span class="source-badge">
+              {{ formatSoilSource(soil.source) }}
+            </span>
+          }
+        </div>
 
-            <div class="section-header">
+        @if (editingSoil()) {
+          <form
+            class="soil-form"
+            [formGroup]="soilForm"
+            (ngSubmit)="saveSoil()"
+          >
+            <div class="soil-form-grid">
+              @for (field of soilFields; track field.key) {
+                @let message = soilFieldError(field.key);
 
-                <div>
+                <div class="soil-field">
+                  <label [for]="field.id">
+                    {{ field.label }}
+                  </label>
 
-                    <span class="section-label">
-                        Soil
-                    </span>
+                  <div class="soil-input-unit">
+                    <input
+                      [id]="field.id"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      [attr.max]="field.max"
+                      [formControlName]="field.key"
+                      [class.soil-input-invalid]="message !== null"
+                      [attr.aria-invalid]="
+                        message !== null ? 'true' : null
+                      "
+                      [attr.aria-describedby]="
+                        message !== null
+                          ? field.id + '-error'
+                          : null
+                      "
+                    />
 
-                    <h2>
-                        Soil properties
-                    </h2>
+                    @if (field.unit) {
+                      <span>{{ field.unit }}</span>
+                    }
+                  </div>
 
+                  @if (message) {
+                    <div
+                      class="soil-validation"
+                      [id]="field.id + '-error'"
+                      aria-live="polite"
+                    >
+                      <span
+                        class="soil-info-icon"
+                        aria-hidden="true"
+                      >
+                        i
+                      </span>
+
+                      <span>{{ message }}</span>
+                    </div>
+                  }
                 </div>
+              }
 
+              <div class="soil-field">
+                <label for="measured-at">
+                  Measurement date
+                </label>
 
-                @if (
-                    currentParcel.soil;
-                    as soil
-                ) {
+                <input
+                  id="measured-at"
+                  type="date"
+                  formControlName="measured_at"
+                />
 
-                <span class="source-badge">
-                    {{
-                        formatSoilSource(
-                            soil.source
-                        )
-                    }}
+                <span class="soil-field-hint">
+                  Optional
                 </span>
-
-                }
-
+              </div>
             </div>
 
-
-            @if (editingSoil()) {
-
-            <form
-                class="soil-form"
-                [formGroup]="soilForm"
-                (ngSubmit)="saveSoil()"
-            >
-
-                <div class="soil-form-grid">
-
-                    <div class="soil-field">
-
-                        <label for="soil-ph">
-                            pH
-                        </label>
-
-                        <input
-                            id="soil-ph"
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            max="14"
-                            formControlName="soil_ph"
-                        />
-
-                    </div>
-
-
-                    <div class="soil-field">
-
-                        <label for="soil-soc">
-                            Soil organic carbon
-                        </label>
-
-                        <div class="soil-input-unit">
-
-                            <input
-                                id="soil-soc"
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                formControlName="soil_soc_g_kg"
-                            />
-
-                            <span>
-                                g/kg
-                            </span>
-
-                        </div>
-
-                    </div>
-
-
-                    <div class="soil-field">
-
-                        <label for="soil-clay">
-                            Clay content
-                        </label>
-
-                        <div class="soil-input-unit">
-
-                            <input
-                                id="soil-clay"
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                max="100"
-                                formControlName="soil_clay_pct"
-                            />
-
-                            <span>
-                                %
-                            </span>
-
-                        </div>
-
-                    </div>
-
-
-                    <div class="soil-field">
-
-                        <label for="measured-at">
-                            Measurement date
-                        </label>
-
-                        <input
-                            id="measured-at"
-                            type="date"
-                            formControlName="measured_at"
-                        />
-
-                        <span class="soil-field-hint">
-                            Optional
-                        </span>
-
-                    </div>
-
-                </div>
-
-
-                <div class="soil-form-note">
-
-                    Your measurement will replace
-                    the SoilGrids estimate as the
-                    active soil data for future
-                    simulations.
-
-                </div>
-
-
-                <div class="soil-form-actions">
-
-                    <button
-                        type="button"
-                        class="soil-cancel-button"
-                        [disabled]="savingSoil()"
-                        (click)="cancelSoilEdit()"
-                    >
-                        Cancel
-                    </button>
-
-
-                    <button
-                        type="submit"
-                        class="soil-save-button"
-                        [disabled]="savingSoil()"
-                    >
-
-                        {{
-                            savingSoil()
-                                ? 'Saving...'
-                                : 'Save measurement'
-                        }}
-
-                    </button>
-
-                </div>
-
-            </form>
-
-            } @else if (
-                currentParcel.soil;
-                as soil
-            ) {
-
-            <div class="data-list">
-
-                <div class="data-row">
-
-                    <span>
-                        pH
-                    </span>
-
-                    <strong>
-                        {{ soil.soil_ph }}
-                    </strong>
-
-                </div>
-
-
-                <div class="data-row">
-
-                    <span>
-                        Soil organic carbon
-                    </span>
-
-                    <strong>
-                        {{
-                            soil
-                                .soil_soc_g_kg
-                        }}
-                        g/kg
-                    </strong>
-
-                </div>
-
-
-                <div class="data-row">
-
-                    <span>
-                        Clay content
-                    </span>
-
-                    <strong>
-                        {{
-                            soil
-                                .soil_clay_pct
-                        }}%
-                    </strong>
-
-                </div>
-
-
-                @if (soil.measured_at) {
-
-                <div class="data-row">
-
-                    <span>
-                        Measurement date
-                    </span>
-
-                    <strong>
-                        {{ soil.measured_at }}
-                    </strong>
-
-                </div>
-
-                }
-
+            <div class="soil-form-note">
+              Your measurement will replace the SoilGrids
+              estimate as the active soil data for future
+              simulations.
             </div>
 
+            <div class="soil-form-actions">
+              <button
+                type="button"
+                class="soil-cancel-button"
+                [disabled]="savingSoil()"
+                (click)="cancelSoilEdit()"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="submit"
+                class="soil-save-button"
+                [disabled]="savingSoil() || soilForm.invalid"
+              >
+                {{
+                  savingSoil()
+                    ? 'Saving...'
+                    : 'Save measurement'
+                }}
+              </button>
+            </div>
+          </form>
+        } @else if (currentParcel.soil; as soil) {
+          <div class="data-list">
+            <div class="data-row">
+              <span>pH</span>
+              <strong>{{ soil.soil_ph }}</strong>
+            </div>
+
+            <div class="data-row">
+              <span>Soil organic carbon</span>
+
+              <strong>
+                {{ soil.soil_soc_g_kg }} g/kg
+              </strong>
+            </div>
+
+            <div class="data-row">
+              <span>Clay content</span>
+              <strong>{{ soil.soil_clay_pct }}%</strong>
+            </div>
+
+            @if (soil.measured_at) {
+              <div class="data-row">
+                <span>Measurement date</span>
+                <strong>{{ soil.measured_at }}</strong>
+              </div>
+            }
+          </div>
+
+          @if (currentParcel.is_active) {
+            <div class="soil-actions">
+              <button
+                type="button"
+                class="soil-edit-button"
+                (click)="startSoilEdit()"
+              >
+                {{
+                  soil.source === 'user'
+                    ? 'Edit measurement'
+                    : 'Add own soil measurement'
+                }}
+              </button>
+
+              @if (soil.source === 'user') {
+                <button
+                  type="button"
+                  class="soil-remove-button"
+                  [disabled]="deletingSoil()"
+                  (click)="removeUserSoil()"
+                >
+                  {{
+                    deletingSoil()
+                      ? 'Removing...'
+                      : 'Remove measurement'
+                  }}
+                </button>
+              }
+            </div>
+          } @else {
+            <div class="soil-disabled-note">
+              Reactivate this parcel to modify its soil data.
+            </div>
+          }
+
+          @if (soil.source === 'user') {
+            <div class="soil-source-note">
+              User measurements override the automatic
+              SoilGrids estimate.
+            </div>
+          }
+        } @else {
+          <div class="empty-section">
+            <strong>Soil data is not available.</strong>
+
+            <span>
+              SoilGrids could not provide values for this parcel.
+            </span>
 
             @if (currentParcel.is_active) {
-
-            <div class="soil-actions">
-
-                <button
-                    type="button"
-                    class="soil-edit-button"
-                    (click)="startSoilEdit()"
-                >
-
-                    {{
-                        soil.source === 'user'
-                            ? 'Edit measurement'
-                            : 'Add own soil measurement'
-                    }}
-
-                </button>
-
-
-                @if (
-                    soil.source === 'user'
-                ) {
-
-                <button
-                    type="button"
-                    class="soil-remove-button"
-                    [disabled]="deletingSoil()"
-                    (click)="removeUserSoil()"
-                >
-
-                    {{
-                        deletingSoil()
-                            ? 'Removing...'
-                            : 'Remove measurement'
-                    }}
-
-                </button>
-
-                }
-
-            </div>
-
-            } @else {
-
-            <div class="soil-disabled-note">
-                Reactivate this parcel to
-                modify its soil data.
-            </div>
-
+              <button
+                type="button"
+                class="soil-edit-button"
+                (click)="startSoilEdit()"
+              >
+                Add own soil measurement
+              </button>
             }
+          </div>
+        }
+      </section>
 
+      <section class="content-card">
+        <div class="section-header">
+          <div>
+            <span class="section-label">Planning</span>
+            <h2>Growing plans</h2>
+          </div>
 
-            @if (
-                soil.source === 'user'
+          @if (currentParcel.is_active) {
+            <a
+              class="season-add-button"
+              [routerLink]="[
+                '/parcels',
+                currentParcel.id,
+                'seasons',
+                'new'
+              ]"
+            >
+              Add growing plan
+            </a>
+          }
+        </div>
+
+        @if (currentParcel.seasons.length > 0) {
+          <div class="season-list">
+            @for (
+              season of currentParcel.seasons;
+              track season.id
             ) {
+              <article class="season-card">
+                <div class="season-heading">
+                  <div>
+                    <strong>{{ season.plan_name }}</strong>
 
-            <div class="soil-source-note">
-                User measurements override
-                the automatic SoilGrids estimate.
-            </div>
-
-            }
-
-            } @else {
-
-            <div class="empty-section">
-
-                <strong>
-                    Soil data is not available.
-                </strong>
-
-                <span>
-                    SoilGrids could not provide
-                    values for this parcel.
-                </span>
-
-
-                @if (currentParcel.is_active) {
-
-                <button
-                    type="button"
-                    class="soil-edit-button"
-                    (click)="startSoilEdit()"
-                >
-                    Add own soil measurement
-                </button>
-
-                }
-
-            </div>
-
-            }
-
-        </section>
-
-
-        <section class="content-card">
-
-            <div class="section-header">
-
-                <div>
-
-                    <span class="section-label">
-                        Planning
+                    <span>
+                      {{ season.season_start_year }}
+                      · {{ formatCrop(season.crop) }}
                     </span>
+                  </div>
 
-                    <h2>
-                        Growing plans
-                    </h2>
-
+                  <span class="strategy-badge">
+                    {{ formatStrategy(season.farming_strategy) }}
+                  </span>
                 </div>
 
+                <div class="season-data">
+                  <div>
+                    <span>Irrigation</span>
 
-                @if (currentParcel.is_active) {
+                    <strong>
+                      {{ season.is_irrigated ? 'Yes' : 'No' }}
+                    </strong>
+                  </div>
+
+                  <div>
+                    <span>Machine use</span>
+
+                    <strong>
+                      {{ formatMachineUse(season.machine_use) }}
+                    </strong>
+                  </div>
+
+                  <div>
+                    <span>Fertilizer</span>
+
+                    <strong>
+                      {{ season.fertilizer_type ?? 'None' }}
+                    </strong>
+                  </div>
+
+                  <div>
+                    <span>Fertilizer quantity</span>
+
+                    <strong>
+                      @if (
+                        season.fertilizer_quantity_kg_ha !== null
+                      ) {
+                        {{ season.fertilizer_quantity_kg_ha }} kg/ha
+                      } @else {
+                        None
+                      }
+                    </strong>
+                  </div>
+                </div>
 
                 <a
-                    class="season-add-button"
-                    [routerLink]="[
-                        '/parcels',
-                        currentParcel.id,
-                        'seasons',
-                        'new'
-                    ]"
+                  class="season-button"
+                  [routerLink]="[
+                    '/parcel-seasons',
+                    season.id
+                  ]"
                 >
-                    Add growing plan
+                  View plan
                 </a>
-
-                }
-
-            </div>
-
-
-            @if (
-                currentParcel
-                    .seasons.length > 0
-            ) {
-
-            <div class="season-list">
-
-                @for (
-                    season
-                    of currentParcel.seasons;
-                    track season.id
-                ) {
-
-                <article class="season-card">
-
-                    <div class="season-heading">
-
-                        <div>
-
-                            <strong>
-                                {{
-                                    season
-                                        .plan_name
-                                }}
-                            </strong>
-
-                            <span>
-                                {{
-                                    season
-                                        .season_start_year
-                                }}
-                                ·
-                                {{
-                                    formatCrop(
-                                        season.crop
-                                    )
-                                }}
-                            </span>
-
-                        </div>
-
-
-                        <span class="strategy-badge">
-                            {{
-                                formatStrategy(
-                                    season
-                                        .farming_strategy
-                                )
-                            }}
-                        </span>
-
-                    </div>
-
-
-                    <div class="season-data">
-
-                        <div>
-
-                            <span>
-                                Irrigation
-                            </span>
-
-                            <strong>
-                                {{
-                                    season
-                                        .is_irrigated
-                                        ? 'Yes'
-                                        : 'No'
-                                }}
-                            </strong>
-
-                        </div>
-
-
-                        <div>
-
-                            <span>
-                                Machine use
-                            </span>
-
-                            <strong>
-                                {{
-                                    formatMachineUse(
-                                        season
-                                            .machine_use
-                                    )
-                                }}
-                            </strong>
-
-                        </div>
-
-
-                        <div>
-
-                            <span>
-                                Fertilizer
-                            </span>
-
-                            <strong>
-                                {{
-                                    season
-                                        .fertilizer_type
-                                        ?? 'None'
-                                }}
-                            </strong>
-
-                        </div>
-
-
-                        <div>
-
-                            <span>
-                                Fertilizer quantity
-                            </span>
-
-                            <strong>
-
-                                @if (
-                                    season
-                                        .fertilizer_quantity_kg_ha
-                                    !== null
-                                ) {
-
-                                {{
-                                    season
-                                        .fertilizer_quantity_kg_ha
-                                }}
-                                kg/ha
-
-                                } @else {
-
-                                None
-
-                                }
-
-                            </strong>
-
-                        </div>
-
-                    </div>
-
-
-                    <a
-                        class="season-button"
-                        [routerLink]="[
-                            '/parcel-seasons',
-                            season.id
-                        ]"
-                    >
-                        View plan
-                    </a>
-
-                </article>
-
-                }
-
-            </div>
-
-            } @else {
-
-            <div class="empty-section">
-                No growing plans have been added yet.
-            </div>
-
+              </article>
             }
-
-        </section>
-
+          </div>
+        } @else {
+          <div class="empty-section">
+            No growing plans have been added yet.
+          </div>
+        }
+      </section>
     </div>
-
-    }
-
+  }
 </section>

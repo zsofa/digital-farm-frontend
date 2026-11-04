@@ -1,1251 +1,357 @@
 <section class="analytics-page">
+  <header class="page-header">
+    <span class="eyebrow">Analytics</span>
+    <h1>Strategy comparison</h1>
+    <p>Compare two growing plans for the same parcel.</p>
+  </header>
 
-    <header class="page-header">
+  @if (loading()) {
+    <div class="state" role="status">
+      Loading growing plans...
+    </div>
+  } @else {
+    @if (error()) {
+      <div class="notice" role="alert">
+        {{ error() }}
+      </div>
+    }
 
-        <div>
-            <span class="eyebrow">
-                Decision analytics
-            </span>
+    @if (!parcels().length) {
+      <div class="state">
+        Create an active parcel and a growing plan
+        to get started.
+      </div>
+    } @else {
+      <section
+        class="selectors"
+        aria-label="Comparison settings"
+      >
+        <label for="parcel">
+          Parcel
 
-            <h1>
-                Analytics Dashboard
-            </h1>
+          <select
+            id="parcel"
+            [value]="parcelId() ?? ''"
+            (change)="changeParcel($event)"
+          >
+            @for (p of parcels(); track p.id) {
+              <option [value]="p.id">
+                {{ p.name }}
+              </option>
+            }
+          </select>
+        </label>
 
-            <p>
-                Compare yield, sustainability and
-                environmental performance across
-                the selected farm plans.
-            </p>
-        </div>
-
-        @if (farm(); as currentFarm) {
-
-        <div class="farm-context-badge">
-
+        @if (plans().length > 0) {
+          <label for="plan-a">
             <span>
-                Selected farm
+              <i class="dot a"></i>
+              Plan A
             </span>
 
-            <strong>
-                {{ currentFarm.name }}
-            </strong>
+            <select
+              id="plan-a"
+              [value]="planAId() ?? ''"
+              (change)="changePlan('a', $event)"
+            >
+              <option value="">Choose a plan</option>
 
+              @for (p of plans(); track p.id) {
+                <option
+                  [value]="p.id"
+                  [disabled]="p.id === planBId()"
+                >
+                  {{ planLabel(p) }}
+                </option>
+              }
+            </select>
+          </label>
+
+          <label for="plan-b">
+            <span>
+              <i class="dot b"></i>
+              Plan B
+            </span>
+
+            <select
+              id="plan-b"
+              [disabled]="plans().length < 2"
+              [value]="planBId() ?? ''"
+              (change)="changePlan('b', $event)"
+            >
+              <option value="">
+                {{
+                  plans().length < 2
+                    ? '—'
+                    : 'Choose a plan'
+                }}
+              </option>
+
+              @for (p of plans(); track p.id) {
+                <option
+                  [value]="p.id"
+                  [disabled]="p.id === planAId()"
+                >
+                  {{ planLabel(p) }}
+                </option>
+              }
+            </select>
+          </label>
+        }
+      </section>
+
+      @if (!plans().length) {
+        <div class="state">
+          Create a growing plan for this parcel
+          to view its results.
         </div>
-
+      } @else if (comparing()) {
+        <div class="state" role="status">
+          Loading comparison...
+        </div>
+      } @else if (
+        !planA() ||
+        planAId() === planBId()
+      ) {
+        <div class="state">
+          Select a growing plan for Plan A.
+        </div>
+      } @else {
+        @if (plans().length === 1) {
+          <div class="notice" role="status">
+            There is no second growing plan to compare.
+            Create another growing plan for this parcel
+            to enable comparison.
+          </div>
+        } @else if (!planB()) {
+          <div class="notice" role="status">
+            Select Plan B to compare it with Plan A.
+          </div>
         }
 
-    </header>
-
-
-    @if (loadingPlans()) {
-
-    <div class="state-card">
-        Loading analytics data...
-    </div>
-
-    } @else if (errorMessage()) {
-
-    <div class="state-card error">
-        {{ errorMessage() }}
-    </div>
-
-    } @else {
-
-
-    <nav class="analytics-tabs" role="tablist" aria-label="Analytics sections">
-
-        <button type="button" [class.active]="
-                activeTab() === 'overview'
-            " (click)="
-                setActiveTab('overview')
-            ">
-            Overview
-        </button>
-
-
-        <button type="button" [class.active]="
-                activeTab() === 'comparison'
-            " (click)="
-                setActiveTab('comparison')
-            ">
-            Strategy Comparison
-        </button>
-
-    </nav>
-
-
-    @if (
-    activeTab() === 'overview'
-    ) {
-
-
-    @if (
-    unselectedParcelCount() > 0
-    ) {
-
-    <div class="notice-card">
-
-        <strong>
-            Some parcels require a plan selection.
-        </strong>
-
-        <span>
-            Analytics only includes parcels with
-            one selected growing plan.
-        </span>
-
-    </div>
-
-    }
-
-
-    @if (
-    incompletePlanCount() > 0
-    ) {
-
-    <div class="notice-card">
-
-        <strong>
-            Some selected plans are incomplete.
-        </strong>
-
-        <span>
-            Incomplete plans are excluded from
-            yield and sustainability analytics.
-        </span>
-
-    </div>
-
-    }
-
-
-    @if (overviewWarning()) {
-
-    <div class="notice-card">
-        <strong>
-            Partial analytics data
-        </strong>
-
-        <span>
-            {{ overviewWarning() }}
-        </span>
-    </div>
-
-    }
-
-
-    <div class="kpi-grid">
-
-
-        <article class="kpi-card sustainability">
-
-            <span class="kpi-accent">
-            </span>
-
-            <span class="kpi-label">
-                Average Sustainability
-            </span>
-
-            <div class="kpi-value">
-
-                @if (
-                averageSustainability()
-                !== null
-                ) {
-
-                {{
-                formatNumber(
-                averageSustainability()
-                ?? 0,
-                0
-                )
-                }}
-
-                <small>
-                    /100
-                </small>
-
-                } @else {
-
-                —
-
-                }
-
-            </div>
-
-            <p>
-                Area-weighted score across
-                included parcel plans.
-            </p>
-
-        </article>
-
-
-        <article class="kpi-card yield">
-
-            <span class="kpi-accent">
-            </span>
-
-            <span class="kpi-label">
-                Average Yield
-            </span>
-
-            <div class="kpi-value">
-
-                @if (
-                averageYield()
-                !== null
-                ) {
-
-                {{
-                formatNumber(
-                averageYield()
-                ?? 0,
-                2
-                )
-                }}
-
-                <small>
-                    t/ha
-                </small>
-
-                } @else {
-
-                —
-
-                }
-
-            </div>
-
-            <p>
-                Area-weighted expected yield
-                from the selected plans.
-            </p>
-
-        </article>
-
-
-        <article class="kpi-card carbon">
-
-            <span class="kpi-accent">
-            </span>
-
-            <span class="kpi-label">
-                Fertilizer CO₂e
-            </span>
-
-            <div class="kpi-value">
-                {{
-                formatCarbonTotal(
-                fertilizerCo2eTotal()
-                )
-                }}
-            </div>
-
-            <p>
-                Estimated fertilizer-related
-                emissions across included area.
-            </p>
-
-        </article>
-
-
-        <article class="kpi-card best">
-
-            <span class="kpi-accent">
-            </span>
-
-            <span class="kpi-label">
-                Best Field
-            </span>
-
-            <div class="field-kpi-value">
-
-                @if (
-                bestField();
-                as field
-                ) {
-
-                <strong>
-                    {{ field.parcel.name }}
-                </strong>
-
-                <span>
-                    {{
-                    score100(
-                    field
-                    .sustainability
-                    .sustainability_score
-                    )
-                    }}
-                    /100
-                </span>
-
-                } @else {
-
-                <strong>
-                    —
-                </strong>
-
-                }
-
-            </div>
-
-            <p>
-                Highest sustainability score
-                in the current plan set.
-            </p>
-
-        </article>
-
-
-        <article class="kpi-card worst">
-
-            <span class="kpi-accent">
-            </span>
-
-            <span class="kpi-label">
-                Lowest Score
-            </span>
-
-            <div class="field-kpi-value">
-
-                @if (
-                worstField();
-                as field
-                ) {
-
-                <strong>
-                    {{ field.parcel.name }}
-                </strong>
-
-                <span>
-                    {{
-                    score100(
-                    field
-                    .sustainability
-                    .sustainability_score
-                    )
-                    }}
-                    /100
-                </span>
-
-                } @else {
-
-                <strong>
-                    —
-                </strong>
-
-                }
-
-            </div>
-
-            <p>
-                Lowest sustainability score
-                in the current plan set.
-            </p>
-
-        </article>
-
-    </div>
-
-
-    @if (loadingOverview()) {
-
-    <div class="state-card">
-        Updating analytics...
-    </div>
-
-    } @else if (
-    overviewCompleteDetails().length
-    === 0
-    ) {
-
-    <div class="state-card">
-        Select at least one complete growing plan
-        to display analytics charts.
-    </div>
-
-    } @else {
-
-
-    <div class="chart-grid">
-
-        <section class="chart-card">
-
-            <div class="chart-header">
-
-                <div>
-                    <span class="chart-label">
-                        Decision trade-off
-                    </span>
-
-                    <h2>
-                        Yield vs Sustainability
-                    </h2>
-
-                    <p>
-                        Each point represents one
-                        selected parcel plan.
-                    </p>
-                </div>
-
-                <span class="chart-badge green">
-                    Scatter
-                </span>
-
-            </div>
-
-            <div class="chart-canvas">
-                <canvas #yieldScatterCanvas>
-                </canvas>
-            </div>
-
-        </section>
-
-
-        <section class="chart-card">
-
-            <div class="chart-header">
-
-                <div>
-                    <span class="chart-label">
-                        Crop performance
-                    </span>
-
-                    <h2>
-                        Expected Yield by Crop
-                    </h2>
-
-                    <p>
-                        Area-weighted crop performance
-                        across selected plans.
-                    </p>
-                </div>
-
-                <span class="chart-badge blue">
-                    Bar
-                </span>
-
-            </div>
-
-            <div class="chart-canvas">
-                <canvas #cropPerformanceCanvas>
-                </canvas>
-            </div>
-
-        </section>
-
-    </div>
-
-    }
-
-
-    <section class="plan-set-card">
-
-        <div class="section-header">
+        @if (comparisonError()) {
+          <div class="notice" role="alert">
+            {{ comparisonError() }}
+          </div>
+        }
+
+        @if (missing(resultA())) {
+          <div class="notice">
+            Plan A — missing: {{ missing(resultA()) }}
+          </div>
+        }
+
+        @if (missing(resultB())) {
+          <div class="notice">
+            Plan B — missing: {{ missing(resultB()) }}
+          </div>
+        }
+
+        <div class="plan-headings">
+          <div>
+            <span class="tag a">A</span>
 
             <div>
-                <span class="section-label">
-                    Analysis plan set
-                </span>
+              <strong>{{ planA()!.plan_name }}</strong>
 
-                <h2>
-                    Plans included in analytics
-                </h2>
+              <p>
+                {{ crop(planA()!.crop) }}
+                · {{ planA()!.season_start_year }}
+                · {{ source(detailA()) }}
+              </p>
+            </div>
+          </div>
+
+          <div>
+            <span class="tag b">B</span>
+
+            <div>
+              @if (planB(); as b) {
+                <strong>{{ b.plan_name }}</strong>
 
                 <p>
-                    Select one plan per parcel.
-                    The same selection drives all
-                    Overview KPIs and charts.
+                  {{ crop(b.crop) }}
+                  · {{ b.season_start_year }}
+                  · {{ source(detailB()) }}
                 </p>
+              } @else {
+                <strong>—</strong>
+              }
             </div>
-
-
-            <div class="coverage-chip">
-
-                <strong>
-                    {{
-                    overviewCompleteDetails()
-                    .length
-                    }}
-                </strong>
-
-                <span>
-                    complete plans
-                </span>
-
-            </div>
-
+          </div>
         </div>
 
+        <div class="kpi-grid">
+          @for (m of metrics(); track m.label) {
+            <article class="kpi">
+              <h2>{{ m.label }}</h2>
+              <span class="unit">{{ m.unit }}</span>
 
-        <div class="plan-list">
-
-            @for (
-            group
-            of planGroups();
-            track group.parcel.id
-            ) {
-
-            <article class="plan-row">
-
-                <div class="parcel-cell">
-
-                    <strong>
-                        {{ group.parcel.name }}
-                    </strong>
-
-                    <span>
-                        {{
-                        group.parcel
-                        .official_area_ha
-                        }}
-                        ha
-                    </span>
-
+              <div class="kpi-values">
+                <div>
+                  <span class="plan-label">A</span>
+                  <strong>{{ number(m.a) }}</strong>
                 </div>
 
-
-                <div class="plan-cell">
-
-                    @if (
-                    group.seasons.length
-                    === 0
-                    ) {
-
-                    <span class="status-chip warning">
-                        No growing plan
-                    </span>
-
-                    } @else if (
-                    group.seasons.length
-                    === 1
-                    ) {
-
-                    <strong>
-                        {{
-                        formatPlanLabel(
-                        group.seasons[0]
-                        )
-                        }}
-                    </strong>
-
-                    } @else {
-
-                    <select [value]="
-                            selectedPlanId(
-                                group.parcel.id
-                            ) ?? ''
-                        " (change)="
-                            onPlanChange(
-                                group.parcel.id,
-                                $event
-                            )
-                        ">
-
-                        <option value="">
-                            Choose a plan
-                        </option>
-
-                        @for (
-                        season
-                        of group.seasons;
-                        track season.id
-                        ) {
-
-                        <option [value]="season.id">
-                            {{
-                            formatPlanLabel(
-                            season
-                            )
-                            }}
-                        </option>
-
-                        }
-
-                    </select>
-
-                    }
-
+                <div>
+                  <span class="plan-label">B</span>
+                  <strong>{{ number(m.b) }}</strong>
                 </div>
+              </div>
 
-
-                <div class="plan-state">
-
-                    @if (
-                    selectedPlanId(
-                    group.parcel.id
-                    );
-                    as selectedId
-                    ) {
-
-                    @if (
-                    detailForSeason(
-                    selectedId
-                    );
-                    as detail
-                    ) {
-
-                    @if (
-                    detail.calculation_status
-                    === 'complete'
-                    ) {
-
-                    <span class="status-chip complete">
-                        Included
-                    </span>
-
-                    } @else {
-
-                    <span class="status-chip warning">
-                        Incomplete
-                    </span>
-
-                    }
-
-                    } @else {
-
-                    <span class="status-chip neutral">
-                        Loading
-                    </span>
-
-                    }
-
-                    } @else if (
-                    group.seasons.length > 1
-                    ) {
-
-                    <span class="status-chip neutral">
-                        Select plan
-                    </span>
-
-                    }
-
-                </div>
-
+              <div class="delta">
+                <span>B − A</span>
+                <strong>{{ difference(m) }}</strong>
+              </div>
             </article>
-
-            }
-
+          }
         </div>
 
-    </section>
-
-
-    } @else {
-
-
-    @if (
-    comparisonGroups().length
-    === 0
-    ) {
-
-    <div class="state-card">
-
-        Strategy comparison requires at least
-        one parcel with two or more growing plans.
-
-    </div>
-
-    } @else {
-
-
-    <section class="comparison-controls">
-
-        <div class="control-group">
-
-            <label for="comparison-parcel">
-                Parcel
-            </label>
-
-            <select id="comparison-parcel" [value]="
-                    comparisonParcelId()
-                    ?? ''
-                " (change)="
-                    onComparisonParcelChange(
-                        $event
-                    )
-                ">
-
-                @for (
-                group
-                of comparisonGroups();
-                track group.parcel.id
-                ) {
-
-                <option [value]="group.parcel.id">
-                    {{ group.parcel.name }}
-                </option>
-
-                }
-
-            </select>
-
-        </div>
-
-
-        <div class="control-group plan-a">
-
-            <label for="plan-a">
-                Plan A
-            </label>
-
-            <select id="plan-a" [value]="
-                    comparisonSeasonAId()
-                    ?? ''
-                " (change)="
-                    onComparisonAChange(
-                        $event
-                    )
-                ">
-
-                @for (
-                season
-                of comparisonSeasons();
-                track season.id
-                ) {
-
-                <option [value]="season.id" [disabled]="
-                        season.id
-                        === comparisonSeasonBId()
-                    ">
-                    {{
-                    formatPlanLabel(
-                    season
-                    )
-                    }}
-                </option>
-
-                }
-
-            </select>
-
-        </div>
-
-
-        <div class="control-group plan-b">
-
-            <label for="plan-b">
-                Plan B
-            </label>
-
-            <select id="plan-b" [value]="
-                    comparisonSeasonBId()
-                    ?? ''
-                " (change)="
-                    onComparisonBChange(
-                        $event
-                    )
-                ">
-
-                @for (
-                season
-                of comparisonSeasons();
-                track season.id
-                ) {
-
-                <option [value]="season.id" [disabled]="
-                        season.id
-                        === comparisonSeasonAId()
-                    ">
-                    {{
-                    formatPlanLabel(
-                    season
-                    )
-                    }}
-                </option>
-
-                }
-
-            </select>
-
-        </div>
-
-    </section>
-
-
-    @if (loadingComparison()) {
-
-    <div class="state-card">
-        Comparing plans...
-    </div>
-
-    } @else if (
-    comparisonErrorMessage()
-    ) {
-
-    <div class="state-card error">
-        {{ comparisonErrorMessage() }}
-    </div>
-
-    } @else {
-
-
-    @if (
-    comparisonAComplete();
-    as planA
-    ) {
-
-    @if (
-    comparisonBComplete();
-    as planB
-    ) {
-
-
-    <div class="change-kpi-grid">
-
-        <article class="change-card">
-
-            <span>
-                Yield change
-            </span>
-
-            <strong [class.positive]="
-                    (yieldChangePct() ?? 0)
-                    > 0
-                " [class.negative]="
-                    (yieldChangePct() ?? 0)
-                    < 0
-                ">
-                {{
-                formatChange(
-                yieldChangePct()
-                )
-                }}
-            </strong>
-
-            <small>
-                Plan B vs Plan A
-            </small>
-
-        </article>
-
-
-        <article class="change-card">
-
-            <span>
-                Sustainability change
-            </span>
-
-            <strong [class.positive]="
-                    (
-                        sustainabilityChangePct()
-                        ?? 0
-                    ) > 0
-                " [class.negative]="
-                    (
-                        sustainabilityChangePct()
-                        ?? 0
-                    ) < 0
-                ">
-                {{
-                formatChange(
-                sustainabilityChangePct()
-                )
-                }}
-            </strong>
-
-            <small>
-                Plan B vs Plan A
-            </small>
-
-        </article>
-
-
-        <article class="change-card">
-
-            <span>
-                Fertilizer CO₂e change
-            </span>
-
-            <strong [class.positive]="
-                    (
-                        carbonChangePct()
-                        ?? 0
-                    ) < 0
-                " [class.negative]="
-                    (
-                        carbonChangePct()
-                        ?? 0
-                    ) > 0
-                ">
-                {{
-                formatChange(
-                carbonChangePct()
-                )
-                }}
-            </strong>
-
-            <small>
-                Lower is better
-            </small>
-
-        </article>
-
-    </div>
-
-
-    <section class="recommendation-card" [class.plan-a]="
-            recommendation().tone
-            === 'a'
-        " [class.plan-b]="
-            recommendation().tone
-            === 'b'
-        ">
-
-        <div class="recommendation-icon">
-            ✦
-        </div>
-
-        <div>
-
-            <span class="section-label">
-                Decision support
-            </span>
-
-            <h2>
-                {{
-                recommendation()
-                .title
-                }}
-            </h2>
-
-            <p>
-                {{
-                recommendation()
-                .reason
-                }}
-            </p>
-
-            <small>
-                Rule-based recommendation.
-                Similar yield means within 5%.
-            </small>
-
-        </div>
-
-    </section>
-
-
-    <div class="chart-grid">
-
-        <section class="chart-card">
-
-            <div class="chart-header">
-
-                <div>
-
-                    <span class="chart-label">
-                        Decision profile
+        <div class="chart-grid">
+          <section class="chart-card">
+            <h2>Expected yield</h2>
+            <p>t/ha</p>
+
+            <div class="bar-chart">
+              @for (bar of yieldBars(); track bar.label) {
+                <div class="bar-row">
+                  <div class="bar-caption">
+                    <span>
+                      {{ bar.label }}
+
+                      @if (bar.plan; as plan) {
+                        · {{ crop(plan.crop) }}
+                      }
                     </span>
 
-                    <h2>
-                        Plan Performance
-                    </h2>
+                    <strong>{{ number(bar.value) }}</strong>
+                  </div>
 
-                    <p>
-                        Normalized comparison of
-                        yield, sustainability and
-                        fertilizer carbon performance.
-                    </p>
-
+                  <div
+                    class="bar-track"
+                    aria-hidden="true"
+                  >
+                    <div
+                      class="bar-fill"
+                      [class.b]="bar.tone === 'b'"
+                      [style.width.%]="
+                        width(bar.value, yieldMax())
+                      "
+                    ></div>
+                  </div>
                 </div>
+              }
 
-                <span class="chart-badge purple">
-                    Grouped bar
-                </span>
+              <div class="axis" aria-hidden="true">
+                <span>0</span>
+                <span>{{ number(yieldMax() / 2) }}</span>
+                <span>{{ number(yieldMax()) }}</span>
+              </div>
+            </div>
+          </section>
 
+          <section class="chart-card">
+            <div class="chart-heading">
+              <div>
+                <h2>Nitrogen input & removal</h2>
+                <p>kg N/ha</p>
+              </div>
+
+              <div class="legend">
+                <span><i class="dot a"></i>A</span>
+                <span><i class="dot b"></i>B</span>
+              </div>
             </div>
 
+            <div class="bar-chart nitrogen">
+              @for (
+                group of nitrogenBars();
+                track group.label
+              ) {
+                <div class="nitrogen-group">
+                  <h3>{{ group.label }}</h3>
 
-            <div class="chart-canvas">
-                <canvas #strategyProfileCanvas>
-                </canvas>
-            </div>
+                  <div class="paired-bar">
+                    <span>A</span>
 
+                    <div
+                      class="bar-track"
+                      aria-hidden="true"
+                    >
+                      <div
+                        class="bar-fill"
+                        [style.width.%]="
+                          width(group.a, nitrogenMax())
+                        "
+                      ></div>
+                    </div>
 
-            <div class="chart-note">
+                    <strong>{{ number(group.a) }}</strong>
+                  </div>
 
-                Yield is indexed against the
-                better-yielding plan.
-                Sustainability uses its native
-                0–100 score.
-                Carbon performance rewards lower
-                fertilizer CO₂e.
+                  <div class="paired-bar">
+                    <span>B</span>
 
-            </div>
+                    <div
+                      class="bar-track"
+                      aria-hidden="true"
+                    >
+                      <div
+                        class="bar-fill b"
+                        [style.width.%]="
+                          width(group.b, nitrogenMax())
+                        "
+                      ></div>
+                    </div>
 
-        </section>
-
-
-        <section class="chart-card">
-
-            <div class="chart-header">
-
-                <div>
-
-                    <span class="chart-label">
-                        Core trade-off
-                    </span>
-
-                    <h2>
-                        Yield vs Sustainability
-                    </h2>
-
-                    <p>
-                        Direct comparison of the
-                        two alternative plans.
-                    </p>
-
+                    <strong>{{ number(group.b) }}</strong>
+                  </div>
                 </div>
+              }
 
-                <span class="chart-badge orange">
-                    Scatter
-                </span>
-
+              <div
+                class="axis nitrogen-axis"
+                aria-hidden="true"
+              >
+                <span>0</span>
+                <span>{{ number(nitrogenMax() / 2) }}</span>
+                <span>{{ number(nitrogenMax()) }}</span>
+              </div>
             </div>
+          </section>
+        </div>
 
+        <section class="settings-card">
+          <h2>Plan settings</h2>
 
-            <div class="chart-canvas">
-                <canvas #tradeoffCanvas>
-                </canvas>
-            </div>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Setting</th>
+                  <th scope="col">Plan A</th>
+                  <th scope="col">Plan B</th>
+                </tr>
+              </thead>
 
+              <tbody>
+                @for (row of settings(); track row.label) {
+                  <tr
+                    [class.different]="
+                      planB() !== null &&
+                      row.a !== row.b
+                    "
+                  >
+                    <th scope="row">{{ row.label }}</th>
+                    <td>{{ row.a }}</td>
+                    <td>{{ row.b }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
         </section>
-
-    </div>
-
-
-    <section class="raw-comparison-card">
-
-        <div class="section-header">
-
-            <div>
-                <span class="section-label">
-                    Direct comparison
-                </span>
-
-                <h2>
-                    Plan metrics
-                </h2>
-            </div>
-
-        </div>
-
-
-        <div class="comparison-plan-headings">
-
-            <div>
-            </div>
-
-            <div class="plan-heading a">
-
-                <span>
-                    Plan A
-                </span>
-
-                <strong>
-                    {{ planA.season.plan_name }}
-                </strong>
-
-                <small>
-                    {{
-                    formatCrop(
-                    planA.season.crop
-                    )
-                    }}
-                    ·
-                    {{
-                    formatStrategy(
-                    planA.season
-                    .farming_strategy
-                    )
-                    }}
-                </small>
-
-            </div>
-
-
-            <div class="plan-heading b">
-
-                <span>
-                    Plan B
-                </span>
-
-                <strong>
-                    {{ planB.season.plan_name }}
-                </strong>
-
-                <small>
-                    {{
-                    formatCrop(
-                    planB.season.crop
-                    )
-                    }}
-                    ·
-                    {{
-                    formatStrategy(
-                    planB.season
-                    .farming_strategy
-                    )
-                    }}
-                </small>
-
-            </div>
-
-
-            <div class="plan-heading b">
-
-                <span>
-                    Plan B
-                </span>
-
-                <strong>
-                    {{
-                    formatCrop(
-                    planB.season.crop
-                    )
-                    }}
-                </strong>
-
-                <small>
-                    {{
-                    formatStrategy(
-                    planB.season
-                    .farming_strategy
-                    )
-                    }}
-                </small>
-
-            </div>
-
-        </div>
-
-
-        <div class="comparison-metric-row">
-
-            <span>
-                Expected yield
-            </span>
-
-            <strong>
-                {{
-                formatNumber(
-                planA.yield
-                .expected_yield_t_ha,
-                2
-                )
-                }}
-                t/ha
-            </strong>
-
-            <strong>
-                {{
-                formatNumber(
-                planB.yield
-                .expected_yield_t_ha,
-                2
-                )
-                }}
-                t/ha
-            </strong>
-
-        </div>
-
-
-        <div class="comparison-metric-row">
-
-            <span>
-                Sustainability
-            </span>
-
-            <strong>
-                {{
-                score100(
-                planA
-                .sustainability
-                .sustainability_score
-                )
-                }}
-                /100
-            </strong>
-
-            <strong>
-                {{
-                score100(
-                planB
-                .sustainability
-                .sustainability_score
-                )
-                }}
-                /100
-            </strong>
-
-        </div>
-
-
-        <div class="comparison-metric-row">
-
-            <span>
-                Fertilizer CO₂e
-            </span>
-
-            <strong>
-                {{
-                formatNumber(
-                planA
-                .sustainability
-                .ghg
-                .fertilizer_emission_kg_co2e_ha,
-                1
-                )
-                }}
-                kg/ha
-            </strong>
-
-            <strong>
-                {{
-                formatNumber(
-                planB
-                .sustainability
-                .ghg
-                .fertilizer_emission_kg_co2e_ha,
-                1
-                )
-                }}
-                kg/ha
-            </strong>
-
-        </div>
-
-    </section>
-
-
-    } @else {
-
-    <div class="state-card">
-        Plan B is missing data required
-        for comparison.
-    </div>
-
+      }
     }
-
-    } @else {
-
-    <div class="state-card">
-        Plan A is missing data required
-        for comparison.
-    </div>
-
-    }
-
-    }
-
-    }
-
-    }
-
-    }
-
+  }
 </section>
