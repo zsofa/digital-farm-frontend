@@ -1,265 +1,119 @@
 <section class="dashboard-page">
-
   @if (loading()) {
-
     <div class="state-card">
-
       <div class="state-title">
         Loading farm data...
       </div>
-
       <div class="state-text">
         Please wait while your farm information is being loaded.
       </div>
-
     </div>
-
   } @else if (errorMessage()) {
-
     <div class="state-card error">
-
       <div class="state-title">
         Something went wrong
       </div>
-
       <div class="state-text">
         {{ errorMessage() }}
       </div>
-
     </div>
-
   } @else if (!farm()) {
-
     <div class="empty-dashboard">
+      <div class="empty-badge">Digital Farm</div>
 
-      <div class="empty-badge">
-        Digital Farm
-      </div>
-
-      <h1>
-        Start with your first farm
-      </h1>
+      <h1>Start with your first farm</h1>
 
       <p>
         Create a farm to begin managing parcels,
         planning growing seasons and running yield simulations.
       </p>
 
-      <a
-        class="primary-button"
-        routerLink="/farms/new"
-      >
+      <a class="primary-button" routerLink="/farms/new">
         Create farm
       </a>
-
     </div>
-
-  } @else if (
-    farm();
-    as currentFarm
-  ) {
-
+  } @else if (farm(); as currentFarm) {
     <div class="dashboard-header">
-
       <div>
-
-        <div class="eyebrow">
-          Farm
-        </div>
-
-        <h1>
-          {{ currentFarm.name }}
-        </h1>
-
-        <p>
-          {{ currentFarm.county_name }}
-        </p>
-
+        <div class="eyebrow">Farm</div>
+        <h1>{{ currentFarm.name }}</h1>
+        <p>{{ currentFarm.county_name }}</p>
       </div>
 
-
       <div class="dashboard-actions">
-
-        <a
-          class="secondary-button"
-          routerLink="/farms/new"
-        >
+        <a class="secondary-button" routerLink="/farms/new">
           Add farm
         </a>
 
         <a
           class="secondary-button"
-          [routerLink]="[
-            '/farms',
-            currentFarm.id,
-            'edit'
-          ]"
+          [routerLink]="['/farms', currentFarm.id, 'edit']"
         >
           Manage farm
         </a>
 
-        <a
-          class="primary-button"
-          routerLink="/parcels/new"
-        >
+        <a class="primary-button" routerLink="/parcels/new">
           Add parcel
         </a>
-
       </div>
-
     </div>
-
 
     <div class="overview-grid">
-
       <article class="overview-card">
-
-        <div class="metric-icon">
-          P
-        </div>
+        <div class="metric-icon">P</div>
 
         <div class="metric-content">
-
-          <span class="card-label">
-            Active parcels
-          </span>
+          <span class="card-label">Active parcels</span>
 
           <div class="metric-value-row">
-
-            <strong>
-              {{ activeParcelCount() }}
-            </strong>
-
-            <span class="metric-unit">
-              parcels
-            </span>
-
+            <strong>{{ activeParcelCount() }}</strong>
+            <span class="metric-unit">parcels</span>
           </div>
-
         </div>
-
       </article>
 
-
       <article class="overview-card">
-
-        <div class="metric-icon">
-          ha
-        </div>
+        <div class="metric-icon">ha</div>
 
         <div class="metric-content">
-
-          <span class="card-label">
-            Active area
-          </span>
+          <span class="card-label">Active area</span>
 
           <div class="metric-value-row">
-
-            <strong>
-              {{ activeTotalArea() }}
-            </strong>
-
-            <span class="metric-unit">
-              hectares
-            </span>
-
+            <strong>{{ activeTotalArea() }}</strong>
+            <span class="metric-unit">hectares</span>
           </div>
-
         </div>
-
       </article>
-
-
-      <article class="overview-card">
-
-        <div
-          class="metric-icon sustainability-icon"
-        >
-          S
-        </div>
-
-        <div class="metric-content">
-
-          <span class="card-label">
-            Sustainability Score
-          </span>
-
-          <strong class="not-calculated">
-            PLaceholder
-          </strong>
-
-          <span class="metric-description">
-            PLaceholder
-          </span>
-
-        </div>
-
-      </article>
-
     </div>
 
-
     <div class="dashboard-layout">
-
       <section class="map-card">
-
         <div class="card-header">
-
           <div>
-
-            <span class="card-label">
-              Farm map
-            </span>
-
-            <h2>
-              Active parcels
-            </h2>
-
+            <span class="card-label">Farm map</span>
+            <h2>Active parcels</h2>
           </div>
 
-
           <span class="parcel-count">
-
             {{ activeParcelCount() }}
-
-            {{
-              activeParcelCount() === 1
-                ? 'parcel'
-                : 'parcels'
-            }}
-
+            {{ activeParcelCount() === 1 ? 'parcel' : 'parcels' }}
           </span>
-
         </div>
 
-
-        @if (
-          activeParcels().length > 0
-        ) {
-
+        @if (activeParcels().length > 0) {
           <app-farm-map
             [parcels]="activeParcels()"
-            (parcelSelected)="
-              selectParcel($event)
-            "
+            (parcelSelected)="selectParcel($event)"
           />
-
         } @else {
-
           <div class="map-empty-state">
+            <div class="map-empty-icon">+</div>
 
-            <div class="map-empty-icon">
-              +
-            </div>
-
-            <h3>
-              No active parcels
-            </h3>
+            <h3>No active parcels</h3>
 
             <p>
-              Add a new parcel or reactivate
-              an inactive parcel to display it
-              on the farm map.
+              Add a new parcel or reactivate an inactive parcel
+              to display it on the farm map.
             </p>
 
             <a
@@ -268,25 +122,15 @@
             >
               Add parcel
             </a>
-
           </div>
-
         }
-
       </section>
 
-
       <aside class="details-card">
-
         <div class="details-topbar">
-
-          <span class="card-label">
-            Selected parcel
-          </span>
-
+          <span class="card-label">Selected parcel</span>
 
           @if (selectedParcel()) {
-
             <button
               type="button"
               class="details-back-button"
@@ -294,204 +138,89 @@
             >
               ← All parcels
             </button>
-
           }
-
         </div>
 
-
-        @if (
-          selectedParcel();
-          as parcel
-        ) {
-
+        @if (selectedParcel(); as parcel) {
           <div class="selected-parcel-header">
-
             <div>
-
-              <h2>
-                {{ parcel.name }}
-              </h2>
+              <h2>{{ parcel.name }}</h2>
 
               @if (!parcel.is_active) {
-
-                <span class="inactive-label">
-                  Inactive
-                </span>
-
+                <span class="inactive-label">Inactive</span>
               }
-
             </div>
 
-
-            <span class="selected-badge">
-              Selected
-            </span>
-
+            <span class="selected-badge">Selected</span>
           </div>
-
 
           <div class="parcel-details">
-
             <div class="detail-row">
-
-              <span>
-                Official area
-              </span>
-
-              <strong>
-                {{ parcel.official_area_ha }} ha
-              </strong>
-
+              <span>Official area</span>
+              <strong>{{ parcel.official_area_ha }} ha</strong>
             </div>
 
-
             <div class="detail-row">
-
-              <span>
-                County
-              </span>
-
-              <strong>
-                {{ parcel.county_name }}
-              </strong>
-
+              <span>County</span>
+              <strong>{{ parcel.county_name }}</strong>
             </div>
 
-
             <div class="detail-row">
-
-              <span>
-                Status
-              </span>
-
+              <span>Status</span>
               <strong>
-                {{
-                  parcel.is_active
-                    ? 'Active'
-                    : 'Inactive'
-                }}
+                {{ parcel.is_active ? 'Active' : 'Inactive' }}
               </strong>
-
             </div>
-
           </div>
-
 
           <a
             class="parcel-button"
-            [routerLink]="[
-              '/parcels',
-              parcel.id
-            ]"
+            [routerLink]="['/parcels', parcel.id]"
           >
             View parcel details
           </a>
-
         } @else {
-
-          <h2>
-            No parcel selected
-          </h2>
+          <h2>No parcel selected</h2>
 
           <p class="details-description">
-            Select a parcel below or on the map
-            to view its soil, season and yield
-            simulation details.
+            Select a parcel below or on the map to view its soil,
+            season and yield simulation details.
           </p>
 
-
-          @if (
-            currentFarm.parcels.length > 0
-          ) {
-
+          @if (currentFarm.parcels.length > 0) {
             <div class="parcel-list-preview">
+              <span class="preview-label">Farm parcels</span>
 
-              <span class="preview-label">
-                Farm parcels
-              </span>
-
-
-              @for (
-                parcel of currentFarm.parcels;
-                track parcel.id
-              ) {
-
+              @for (parcel of currentFarm.parcels; track parcel.id) {
                 <button
                   type="button"
                   class="parcel-preview"
-                  [class.inactive]="
-                    !parcel.is_active
-                  "
-                  (click)="
-                    selectParcel(parcel)
-                  "
+                  [class.inactive]="!parcel.is_active"
+                  (click)="selectParcel(parcel)"
                 >
-
                   <div>
+                    <div class="parcel-preview-title">
+                      <strong>{{ parcel.name }}</strong>
 
-                    <div
-                      class="parcel-preview-title"
-                    >
-
-                      <strong>
-                        {{ parcel.name }}
-                      </strong>
-
-
-                      @if (
-                        !parcel.is_active
-                      ) {
-
-                        <span
-                          class="inactive-label"
-                        >
-                          Inactive
-                        </span>
-
+                      @if (!parcel.is_active) {
+                        <span class="inactive-label">Inactive</span>
                       }
-
                     </div>
 
-
-                    <span>
-                      {{
-                        parcel.official_area_ha
-                      }}
-                      ha
-                    </span>
-
+                    <span>{{ parcel.official_area_ha }} ha</span>
                   </div>
 
-
-                  <span
-                    class="parcel-dot"
-                  >
-                  </span>
-
+                  <span class="parcel-dot"></span>
                 </button>
-
               }
-
             </div>
-
           } @else {
-
             <div class="details-placeholder">
-
-              No parcels have been added
-              to this farm yet.
-
+              No parcels have been added to this farm yet.
             </div>
-
           }
-
         }
-
       </aside>
-
     </div>
-
   }
-
 </section>

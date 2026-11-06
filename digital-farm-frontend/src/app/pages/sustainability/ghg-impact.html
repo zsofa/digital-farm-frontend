@@ -1,0 +1,108 @@
+@let d = detail();
+@let m = metrics();
+@let score = displayScore();
+
+<section class="panel">
+  <header class="parcel-header">
+    <div class="parcel-heading">
+      <span class="eyebrow">GHG impact</span>
+      <h2>{{ d.parcel.name }}</h2>
+      <p>{{ d.season.plan_name }} · {{ cropLabel() }}</p>
+    </div>
+
+    @if (m.regionName) {
+      <span class="region">{{ m.regionName }}</span>
+    }
+  </header>
+
+  <div class="cards">
+    <article class="metric-card management">
+      <div class="card-heading">
+        <span class="icon" aria-hidden="true">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M5 4v16M12 4v16M19 4v16" />
+            <path d="M2 8h6M9 16h6M16 10h6" />
+          </svg>
+        </span>
+
+        <h3>Management score</h3>
+      </div>
+
+      <div class="score-value">
+        <strong>
+          {{ score === null ? '—' : (score | number:'1.0-1') }}
+        </strong>
+        <span>/ 100</span>
+      </div>
+
+      <div class="scale" aria-hidden="true">
+        <div class="track">
+          @if (score !== null) {
+            <span class="fill" [style.width.%]="score"></span>
+          }
+        </div>
+
+        <div class="scale-labels">
+          <span>0</span>
+          <span>100</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="metric-card emissions">
+      <div class="card-heading">
+        <span class="icon" aria-hidden="true">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path
+              d="M7 17a4 4 0 1 1 .5-8A6 6 0 0 1 19 10a3.5 3.5 0 0 1-1 7H7Z"
+            />
+          </svg>
+        </span>
+
+        <h3>Estimated emissions</h3>
+      </div>
+
+      <div class="emission-value">
+        <strong>
+          {{
+            m.emissionPerHa === null
+              ? '—'
+              : (m.emissionPerHa | number:'1.2-2')
+          }}
+        </strong>
+
+        <span>kg CO₂eq/ha</span>
+      </div>
+
+      <div class="parcel-total">
+        <span class="total-label">Whole parcel</span>
+
+        <div>
+          <strong>
+            {{
+              m.totalEmission === null
+                ? '—'
+                : (m.totalEmission | number:'1.2-2')
+            }}
+          </strong>
+
+          <span>kg CO₂eq</span>
+        </div>
+      </div>
+    </article>
+  </div>
+</section>
