@@ -1,10 +1,9 @@
-import { Component, computed, input } from '@angular/core';
-import { DecimalPipe } from '@angular/common';
-
-import {
+import type {
   CompleteParcelSeasonSustainabilityResult,
-} from '../../models/sustainability.model';
+} from '../models/sustainability.model';
 
+// A számpárok sorrendje: kibocsátás [kg CO₂eq/ha], száraz hozam [kg/ha].
+// A barley referencia az árpára és a búzára is vonatkozik.
 const REGIONS = [
   {
     code: 'HU10',
@@ -106,33 +105,32 @@ export function calculateGhgImpact(
       ? MACHINE_FACTORS[machine]
       : null;
 
-  const strategyFactor =
-    Object.hasOwn(STRATEGY_FACTORS, strategy)
-      ? STRATEGY_FACTORS[strategy]
-      : null;
+  const strategyFactor = Object.hasOwn(STRATEGY_FACTORS, strategy)
+    ? STRATEGY_FACTORS[strategy]
+    : null;
 
+  // A két felület a megjelenítéskor szorozza meg 100-zal.
   const managementScore =
     machineFactor !== null && strategyFactor !== null
       ? machineFactor * strategyFactor
       : null;
 
-  const county = normalizeCounty(
-    detail.parcel.county_name ?? '',
-  );
+  const county = normalizeCounty(detail.parcel.county_name ?? '');
 
-  const region = REGIONS.find((r) =>
-    r.counties.some((c) => normalizeCounty(c) === county),
+  const region = REGIONS.find((candidate) =>
+    candidate.counties.some((name) => normalizeCounty(name) === county),
   );
 
   const crop = detail.season.crop;
+  let reference: readonly [number, number] | null = null;
 
-  const reference = !region
-    ? null
-    : crop === 'maize'
-      ? region.maize
-      : crop === 'barley' || crop === 'wheat'
-        ? region.barley
-        : null;
+  if (region) {
+    if (crop === 'maize') {
+      reference = region.maize;
+    } else if (crop === 'barley' || crop === 'wheat') {
+      reference = region.barley;
+    }
+  }
 
   const dryYield = detail.yield.expected_yield_t_ha;
   const area = detail.parcel.official_area_ha;
@@ -141,15 +139,14 @@ export function calculateGhgImpact(
     ? reference[0] / reference[1]
     : null;
 
+  // A becsült száraz hozam t/ha-ban érkezik, a referencia kg/ha-ban van.
   const emissionPerHa =
     intensity !== null && nonNegative(dryYield)
       ? intensity * dryYield * 1000
       : null;
 
   const totalEmission =
-    emissionPerHa !== null &&
-    nonNegative(area) &&
-    area > 0
+    emissionPerHa !== null && nonNegative(area) && area > 0
       ? emissionPerHa * area
       : null;
 
@@ -157,45 +154,14 @@ export function calculateGhgImpact(
     machineFactor,
     strategyFactor,
     managementScore,
-
     regionName: region?.name ?? null,
     regionCode: region?.code ?? null,
-
     referenceEmission: reference?.[0] ?? null,
     referenceDryYield: reference?.[1] ?? null,
-
     intensity,
     emissionPerHa,
     totalEmission,
-
     dryYield: nonNegative(dryYield) ? dryYield : null,
     area: nonNegative(area) && area > 0 ? area : null,
   };
-}
-
-@Component({
-  selector: 'app-ghg-impact',
-  standalone: true,
-  imports: [DecimalPipe],
-  templateUrl: './ghg-impact.html',
-  styleUrl: './ghg-impact.css',
-})
-export class GhgImpact {
-  readonly detail =
-    input.required<CompleteParcelSeasonSustainabilityResult>();
-
-  readonly metrics = computed(() =>
-    calculateGhgImpact(this.detail()),
-  );
-
-  readonly displayScore = computed(() => {
-    const score = this.metrics().managementScore;
-    return score === null ? null : score * 100;
-  });
-
-  readonly cropLabel = computed(() => ({
-    wheat: 'Wheat',
-    barley: 'Barley',
-    maize: 'Maize',
-  })[this.detail().season.crop]);
 }

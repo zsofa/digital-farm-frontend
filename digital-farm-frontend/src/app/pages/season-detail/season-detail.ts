@@ -19,8 +19,8 @@ import {
 } from '../../models/parcel.model';
 
 import {
-  ParcelSeasonService,
-} from '../../services/parcel-season.service';
+  SeasonService,
+} from '../../services/season.service';
 
 import {
   SimulationService,
@@ -70,12 +70,12 @@ export class SeasonDetail
     private readonly router:
       Router,
 
-    private readonly parcelSeasonService:
-      ParcelSeasonService,
+    private readonly seasonService:
+      SeasonService,
 
     private readonly simulationService:
       SimulationService,
-  ) {}
+  ) { }
 
 
   ngOnInit(): void {
@@ -174,7 +174,7 @@ export class SeasonDetail
 
           this.errorMessage.set(
             error.error?.error ??
-              'Unable to run yield simulation.'
+            'Unable to run yield simulation.'
           );
         },
       });
@@ -241,7 +241,7 @@ export class SeasonDetail
       null
     );
 
-    this.parcelSeasonService
+    this.seasonService
       .getSeason(
         this.seasonId
       )

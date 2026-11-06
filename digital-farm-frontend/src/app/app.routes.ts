@@ -1,15 +1,10 @@
 import { Routes } from '@angular/router';
-
 import { authGuard } from './core/auth/auth.guard';
-
 import { AppLayout } from './layout/app-layout/app-layout';
-
 import { Login } from './pages/auth/login/login';
 import { Register } from './pages/auth/register/register';
-
 import { Analytics } from './pages/analytics/analytics';
 import { Dashboard } from './pages/dashboard/dashboard';
-import { Fields } from './pages/fields/fields';
 import { ParcelDetail } from './pages/parcel-detail/parcel-detail';
 import { SeasonDetail } from './pages/season-detail/season-detail';
 import { SimulationDetail } from './pages/simulation-detail/simulation-detail';
@@ -43,12 +38,6 @@ export const routes: Routes = [
         path: 'dashboard',
         component: Dashboard,
       },
-
-      {
-        path: 'fields',
-        component: Fields,
-      },
-
       {
         path: 'farms/new',
         component: FarmForm,
@@ -70,11 +59,6 @@ export const routes: Routes = [
       {
         path: 'parcels/:parcelId',
         component: ParcelDetail,
-      },
-
-      {
-        path: 'parcel-seasons/:seasonId',
-        component: SeasonDetail,
       },
 
       {

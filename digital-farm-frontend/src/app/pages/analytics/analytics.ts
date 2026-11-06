@@ -37,9 +37,7 @@ import {
   SustainabilityService,
 } from '../../services/sustainability.service';
 
-import {
-  calculateGhgImpact,
-} from '../sustainability/ghg-impact';
+import { calculateGhgImpact } from '../../calculations/ghg-calculations';
 
 type Detail = CompleteParcelSeasonSustainabilityResult;
 type MetricValue = number | null;

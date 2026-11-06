@@ -1,5 +1,5 @@
-import { GhgImpact } from './ghg-impact';
-import { SoilCondition } from './soil-condition';
+import { GhgImpact } from './ghg-impact/ghg-impact';
+import { SoilCondition } from './soil-condition/soil-condition';
 import {
   Component,
   computed,

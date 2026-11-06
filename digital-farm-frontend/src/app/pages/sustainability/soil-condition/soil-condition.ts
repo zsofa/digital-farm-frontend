@@ -3,7 +3,7 @@ import { DecimalPipe } from '@angular/common';
 
 import {
   CompleteParcelSeasonSustainabilityResult,
-} from '../../models/sustainability.model';
+} from '../../../models/sustainability.model';
 
 interface TextureClayRange {
   name: string;
