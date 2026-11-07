@@ -4,48 +4,36 @@
 
     <div>
       <div class="brand-name">Digital Farm</div>
-      <div class="brand-subtitle">
-        Agricultural Decision Support Platform
-      </div>
+      <div class="brand-subtitle">Agricultural Decision Support Platform</div>
     </div>
   </div>
 
   <div class="auth-container">
     <section class="auth-intro">
-      <span class="eyebrow">
-        Start managing your farm digitally
-      </span>
+      <span class="eyebrow">Start managing your farm digitally</span>
 
-      <h1>
-        Your farm.
-        <span>Your data.</span>
-      </h1>
+      <h1>Your farm. <span>Your data.</span></h1>
 
       <p>
-        Create your account to manage parcels, plan growing
-        seasons and explore data-driven yield scenarios.
+        Create your account to manage parcels, plan growing seasons
+        and explore data-driven yield scenarios.
       </p>
     </section>
 
     <section class="auth-card">
       <div class="card-header">
         <h2>Create account</h2>
-        <p>
-          Set up your Digital Farm account.
-        </p>
+        <p>Set up your Digital Farm account.</p>
       </div>
 
-      <form
-        [formGroup]="form"
-        (ngSubmit)="submit()"
-      >
+      <form [formGroup]="form" (ngSubmit)="submit()">
         <div class="name-grid">
           <div class="form-field">
             <label for="first_name">First name</label>
-
             <input
               id="first_name"
               type="text"
+              autocomplete="given-name"
               formControlName="first_name"
               placeholder="John"
             />
@@ -53,10 +41,10 @@
 
           <div class="form-field">
             <label for="last_name">Last name</label>
-
             <input
               id="last_name"
               type="text"
+              autocomplete="family-name"
               formControlName="last_name"
               placeholder="Smith"
             />
@@ -65,28 +53,47 @@
 
         <div class="form-field">
           <label for="email">Email address</label>
-
           <input
             id="email"
             type="email"
+            autocomplete="email"
             formControlName="email"
             placeholder="john@example.com"
+            aria-describedby="email-hint"
           />
+
+          <small id="email-hint" aria-live="polite">
+            @if (form.controls.email.hasError('emailTaken')) {
+              This email address is already registered.
+            } @else if (form.controls.email.invalid && form.controls.email.touched) {
+              Enter a valid email address.
+            }
+          </small>
         </div>
 
         <div class="form-field">
           <label for="password">Password</label>
-
           <input
             id="password"
             type="password"
+            autocomplete="new-password"
             formControlName="password"
             placeholder="Minimum 8 characters"
+            aria-describedby="password-hint"
           />
+
+          <small id="password-hint" aria-live="polite">
+            @if (
+              form.controls.password.invalid &&
+              (form.controls.password.dirty || form.controls.password.touched)
+            ) {
+              Enter a password with at least 8 characters.
+            }
+          </small>
         </div>
 
         @if (errorMessage()) {
-          <div class="error-message">
+          <div class="error-message" role="alert">
             {{ errorMessage() }}
           </div>
         }
@@ -94,13 +101,9 @@
         <button
           type="submit"
           class="primary-button"
-          [disabled]="loading()"
+          [disabled]="loading() || status() !== 'VALID'"
         >
-          @if (loading()) {
-            Creating account...
-          } @else {
-            Create account
-          }
+          {{ loading() ? 'Creating account...' : 'Create account' }}
         </button>
       </form>
 

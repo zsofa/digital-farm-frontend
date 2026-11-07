@@ -1,5 +1,5 @@
-import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Injectable, signal } from '@angular/core';
 import { tap } from 'rxjs';
 
 import { environment } from '../../environments/environment';
@@ -12,33 +12,27 @@ export class AuthService {
   private readonly tokenKey = 'digital_farm_token';
   private readonly userKey = 'digital_farm_user';
 
-  readonly currentUser = signal<User | null>(
-    this.loadStoredUser()
-  );
+  readonly currentUser = signal<User | null>(this.loadStoredUser());
 
   constructor(private readonly http: HttpClient) {}
 
   login(email: string, password: string) {
     return this.http.post<LoginResponse>(
       `${environment.apiUrl}/auth/login`,
-      {
-        email,
-        password,
-      }
+      { email, password },
     ).pipe(
       tap(response => {
-        localStorage.setItem(
-          this.tokenKey,
-          response.access_token
-        );
-
-        localStorage.setItem(
-          this.userKey,
-          JSON.stringify(response.user)
-        );
-
+        localStorage.setItem(this.tokenKey, response.access_token);
+        localStorage.setItem(this.userKey, JSON.stringify(response.user));
         this.currentUser.set(response.user);
-      })
+      }),
+    );
+  }
+
+  checkEmail(email: string) {
+    return this.http.post<{ available: boolean }>(
+      `${environment.apiUrl}/auth/email-availability`,
+      { email },
     );
   }
 
@@ -50,7 +44,7 @@ export class AuthService {
   }) {
     return this.http.post<User>(
       `${environment.apiUrl}/auth/register`,
-      data
+      data,
     );
   }
 
@@ -69,9 +63,7 @@ export class AuthService {
   }
 
   private loadStoredUser(): User | null {
-    const storedUser = localStorage.getItem(
-      this.userKey
-    );
+    const storedUser = localStorage.getItem(this.userKey);
 
     if (!storedUser) {
       return null;

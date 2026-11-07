@@ -1,7 +1,4 @@
-export type SimulationStatus =
-  | 'current'
-  | 'outdated';
-
+export type SimulationStatus = 'current' | 'outdated';
 
 export interface SimulationScenario {
   estimated_total_t: number;
@@ -10,13 +7,11 @@ export interface SimulationScenario {
   temperature_c: number;
 }
 
-
 export interface SimulationScenarios {
   dry_hot: SimulationScenario;
   expected: SimulationScenario;
   wet_cool: SimulationScenario;
 }
-
 
 export interface SimulationParcel {
   id: number;
@@ -24,12 +19,10 @@ export interface SimulationParcel {
   official_area_ha: number;
 }
 
-
 export interface SimulationSeason {
   crop: string;
   season_start_year: number;
 }
-
 
 export interface SimulationSoil {
   soil_clay_pct: number;
@@ -38,40 +31,32 @@ export interface SimulationSoil {
   source: 'soilgrids' | 'user';
 }
 
-
 export interface SimulationSummary {
   simulation_id: number;
+  simulation_number: number;
   created_at: string;
   model_type: string;
   recent_yield_mean_t_ha: number;
-
   parcel_revision_at_run: number;
   current_parcel_revision: number;
-
   expected_yield_t_ha: number | null;
   expected_total_t: number | null;
-
   status: SimulationStatus;
   model_version: string | null;
   recent_yield_years: number[] | null;
 }
 
-
 export interface SimulationDetails {
   simulation_id: number;
+  simulation_number: number;
   parcel_season_id: number;
-
   county_name: string;
   created_at: string;
-
   model_type: string;
   recent_yield_mean_t_ha: number;
-
   parcel_revision_at_run: number;
   current_parcel_revision: number;
-
   status: SimulationStatus;
-
   parcel: SimulationParcel;
   season: SimulationSeason;
   soil: SimulationSoil;
@@ -79,7 +64,6 @@ export interface SimulationDetails {
   model_version: string | null;
   recent_yield_years: number[] | null;
 }
-
 
 export interface RunSimulationResponse {
   simulation_id: number;

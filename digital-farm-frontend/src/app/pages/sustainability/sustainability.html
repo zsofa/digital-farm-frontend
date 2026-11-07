@@ -3,9 +3,7 @@
     <div>
       <span class="eyebrow">Sustainability</span>
       <h1>Farm sustainability</h1>
-      <p>
-        Evaluate environmental performance across the selected farm plans.
-      </p>
+      <p>Evaluate environmental performance across the selected farm plans.</p>
     </div>
 
     @if (farmResult(); as result) {
@@ -26,18 +24,19 @@
   </header>
 
   @if (loadingPlans()) {
-    <div class="state-card">
+    <div class="state-card" role="status">
       Loading sustainability data...
     </div>
   } @else if (errorMessage()) {
-    <div class="state-card error">
+    <div class="page-feedback page-feedback-error" role="alert">
       {{ errorMessage() }}
     </div>
+  } @else if (!farm()) {
+    <div class="page-feedback" role="status">
+      No farm available.
+    </div>
   } @else {
-    <nav
-      class="sustainability-tabs"
-      aria-label="Sustainability sections"
-    >
+    <nav class="sustainability-tabs" aria-label="Sustainability sections">
       <button
         type="button"
         [class.active]="activeTab() === 'overview'"
@@ -73,11 +72,8 @@
 
     @if (farmResult(); as result) {
       @if (result.calculation_status === 'partial') {
-        <div class="notice-card">
-          <strong>
-            Sustainability is based on partial data.
-          </strong>
-
+        <div class="page-feedback" role="status">
+          <strong>Sustainability is based on partial data.</strong>
           <span>
             Some parcels have incomplete inputs or no selected growing plan.
           </span>
@@ -94,16 +90,13 @@
             </div>
 
             @if (calculating()) {
-              <span class="updating-label">
-                Updating selection...
-              </span>
+              <span class="updating-label">Updating selection...</span>
             }
           </div>
 
           @if (planGroups().length === 0) {
-            <div class="empty-state">
+            <div class="page-feedback" role="status">
               <strong>No active parcels available.</strong>
-
               <span>
                 Add an active parcel and growing plan to calculate sustainability.
               </span>
@@ -113,34 +106,19 @@
               @for (group of planGroups(); track group.parcel.id) {
                 <article class="plan-row">
                   <div class="parcel-info">
-                    <strong>
-                      {{ group.parcel.name }}
-                    </strong>
-
-                    <span>
-                      {{ group.parcel.official_area_ha }} ha
-                    </span>
+                    <strong>{{ group.parcel.name }}</strong>
+                    <span>{{ group.parcel.official_area_ha }} ha</span>
                   </div>
 
                   <div class="plan-selection">
                     @if (group.seasons.length === 0) {
-                      <span class="plan-status warning">
-                        No growing plan
-                      </span>
+                      <span class="plan-status warning">No growing plan</span>
                     } @else if (group.seasons.length === 1) {
                       <div class="single-plan">
-                        <strong>
-                          {{ group.seasons[0].plan_name }}
-                        </strong>
-
+                        <strong>{{ group.seasons[0].plan_name }}</strong>
                         <span>
                           {{ formatCrop(group.seasons[0].crop) }}
-                          ·
-                          {{
-                            formatStrategy(
-                              group.seasons[0].farming_strategy
-                            )
-                          }}
+                          · {{ formatStrategy(group.seasons[0].farming_strategy) }}
                         </span>
                       </div>
                     } @else {
@@ -151,9 +129,7 @@
                           [value]="selectedPlanId(group.parcel.id) ?? ''"
                           (change)="onPlanChange(group.parcel.id, $event)"
                         >
-                          <option value="">
-                            Choose a plan
-                          </option>
+                          <option value="">Choose a plan</option>
 
                           @for (season of group.seasons; track season.id) {
                             <option [value]="season.id">
@@ -168,9 +144,7 @@
                   <div class="plan-result">
                     @if (resultForParcel(group.parcel.id); as parcelResult) {
                       @if (parcelResult.calculation_status === 'complete') {
-                        <span class="plan-status">
-                          Ready
-                        </span>
+                        <span class="plan-status">Ready</span>
                       } @else {
                         <div class="incomplete-result">
                           <strong>Incomplete</strong>
@@ -178,7 +152,6 @@
                           @if (parcelResult.missing_inputs?.length) {
                             <span>
                               Missing:
-
                               @for (
                                 input of parcelResult.missing_inputs;
                                 track input;
@@ -194,9 +167,7 @@
                       group.seasons.length > 1 &&
                       selectedPlanId(group.parcel.id) === null
                     ) {
-                      <span class="plan-status select">
-                        Select a plan
-                      </span>
+                      <span class="plan-status select">Select a plan</span>
                     }
                   </div>
                 </article>
@@ -208,9 +179,7 @@
         <section class="content-card">
           <div class="section-header">
             <div>
-              <span class="section-label">
-                Calculation coverage
-              </span>
+              <span class="section-label">Calculation coverage</span>
               <h2>Farm coverage</h2>
             </div>
           </div>
@@ -218,57 +187,48 @@
           <div class="coverage-grid">
             <div>
               <span>Active parcels</span>
-              <strong>
-                {{ result.summary.active_parcel_count }}
-              </strong>
+              <strong>{{ result.summary.active_parcel_count }}</strong>
             </div>
 
             <div>
               <span>Selected plans</span>
-              <strong>
-                {{ result.summary.selected_season_count }}
-              </strong>
+              <strong>{{ result.summary.selected_season_count }}</strong>
             </div>
 
             <div>
               <span>Complete</span>
-              <strong>
-                {{ result.summary.complete_season_count }}
-              </strong>
+              <strong>{{ result.summary.complete_season_count }}</strong>
             </div>
 
             <div>
               <span>Incomplete</span>
-              <strong>
-                {{ result.summary.incomplete_season_count }}
-              </strong>
+              <strong>{{ result.summary.incomplete_season_count }}</strong>
             </div>
 
             <div>
               <span>Included area</span>
               <strong>
-                {{ result.summary.weighted_area_sum_ha }} ha
+                {{ result.summary.weighted_area_sum_ha | number:'1.0-2' }} ha
               </strong>
             </div>
           </div>
         </section>
       } @else {
         @if (loadingDetails()) {
-          <div class="state-card">
+          <div class="state-card" role="status">
             Loading detailed sustainability data...
           </div>
         } @else {
           @if (analysisErrorMessage()) {
-            <div class="notice-card">
+            <div class="page-feedback page-feedback-error" role="alert">
               <strong>Partial detailed data</strong>
               <span>{{ analysisErrorMessage() }}</span>
             </div>
           }
 
           @if (incompleteDetailedCount() > 0) {
-            <div class="notice-card">
+            <div class="page-feedback" role="status">
               <strong>Some plans are incomplete.</strong>
-
               <span>
                 Only complete plans are included in the detailed analysis below.
               </span>
@@ -276,37 +236,24 @@
           }
 
           @if (completeDetailedResults().length === 0) {
-            <div class="state-card">
+            <div class="page-feedback" role="status">
               No complete plans are available for detailed analysis.
             </div>
           } @else {
             @if (activeTab() === 'nitrogen') {
-              @for (
-                detail of completeDetailedResults();
-                track detail.parcel_season_id
-              ) {
+              @for (detail of completeDetailedResults(); track detail.parcel_season_id) {
                 @let nitrogen = detail.sustainability.nitrogen;
 
                 <section class="content-card">
                   <div class="section-header">
                     <div>
-                      <span class="section-label">
-                        Nitrogen analysis
-                      </span>
-
+                      <span class="section-label">Nitrogen analysis</span>
                       <h2>{{ detail.parcel.name }}</h2>
 
                       <p>
                         {{ detail.season.plan_name }}
                         · {{ formatCrop(detail.season.crop) }}
-                        · Yield:
-                        {{
-                          formatNumber(
-                            detail.yield.expected_yield_t_ha,
-                            2
-                          )
-                        }}
-                        t/ha
+                        · Yield: {{ formatNumber(detail.yield.expected_yield_t_ha, 2) }} t/ha
                         ({{ formatYieldSource(detail.yield.source) }})
                       </p>
                     </div>
@@ -314,51 +261,26 @@
 
                   <div class="kpi-grid">
                     <article class="kpi-card">
-                      <span class="kpi-label">
-                        Applied Nitrogen
-                      </span>
-
+                      <span class="kpi-label">Applied Nitrogen</span>
                       <div class="kpi-value">
-                        {{
-                          formatNumber(
-                            nitrogen.applied_nitrogen_kg_ha
-                          )
-                        }}
+                        {{ formatNumber(nitrogen.applied_nitrogen_kg_ha) }}
                       </div>
-
-                      <span class="kpi-unit">kg N/ha</span>
-
-                    </article>
-
-                    <article class="kpi-card">
-                      <span class="kpi-label">
-                        Removed Nitrogen
-                      </span>
-
-                      <div class="kpi-value">
-                        {{
-                          formatNumber(
-                            nitrogen.removed_nitrogen_kg_ha
-                          )
-                        }}
-                      </div>
-
                       <span class="kpi-unit">kg N/ha</span>
                     </article>
 
                     <article class="kpi-card">
-                      <span class="kpi-label">
-                        Estimated partial nitrogen balance
-                      </span>
-
+                      <span class="kpi-label">Removed Nitrogen</span>
                       <div class="kpi-value">
-                        {{
-                          formatSignedNumber(
-                            nitrogen.nitrogen_balance_kg_ha
-                          )
-                        }}
+                        {{ formatNumber(nitrogen.removed_nitrogen_kg_ha) }}
                       </div>
+                      <span class="kpi-unit">kg N/ha</span>
+                    </article>
 
+                    <article class="kpi-card">
+                      <span class="kpi-label">Estimated partial nitrogen balance</span>
+                      <div class="kpi-value">
+                        {{ formatSignedNumber(nitrogen.nitrogen_balance_kg_ha) }}
+                      </div>
                       <span class="kpi-unit">kg N/ha</span>
                     </article>
 
@@ -369,37 +291,23 @@
 
                       @if (nitrogen.nitrogen_removal_ratio_pct !== null) {
                         <div class="kpi-value">
-                          {{
-                            formatNumber(
-                              nitrogen.nitrogen_removal_ratio_pct
-                            )
-                          }}
+                          {{ formatNumber(nitrogen.nitrogen_removal_ratio_pct) }}
                         </div>
-
                         <span class="kpi-unit">%</span>
                       } @else {
                         <div class="kpi-value">—</div>
-
-                        <p>
-                          Not defined when applied nitrogen is zero.
-                        </p>
+                        <p>Not defined when applied nitrogen is zero.</p>
                       }
                     </article>
                   </div>
                 </section>
               }
             } @else if (activeTab() === 'soil') {
-              @for (
-                detail of completeDetailedResults();
-                track detail.parcel_season_id
-              ) {
+              @for (detail of completeDetailedResults(); track detail.parcel_season_id) {
                 <app-soil-condition [detail]="detail" />
               }
             } @else if (activeTab() === 'ghg') {
-              @for (
-                detail of completeDetailedResults();
-                track detail.parcel_season_id
-              ) {
+              @for (detail of completeDetailedResults(); track detail.parcel_season_id) {
                 <app-ghg-impact [detail]="detail" />
               }
             }

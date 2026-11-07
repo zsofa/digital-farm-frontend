@@ -29,3 +29,21 @@ body {
   padding: 24px;
   background: #f5f7f6;
 }
+
+.page-feedback {
+  display: grid;
+  gap: 4px;
+  padding: 14px 18px;
+  border: 1px solid #f4cd92;
+  border-radius: 12px;
+  background: #fff6e8;
+  color: #8a4900;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.page-feedback-error {
+  border-color: #f2b8b5;
+  background: #fff1f0;
+  color: #9e231b;
+}

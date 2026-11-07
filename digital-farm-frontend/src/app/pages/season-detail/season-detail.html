@@ -1,81 +1,34 @@
 <section class="season-page">
-
   @if (loading()) {
-
-    <div class="state-card">
-      Loading growing season...
-    </div>
-
+    <div class="state-card">Loading growing season...</div>
   } @else if (!season()) {
-
     <div class="state-card error">
-      {{
-        errorMessage() ??
-          'Growing season not found.'
-      }}
+      {{ errorMessage() ?? 'Growing season not found.' }}
     </div>
-
-  } @else if (
-    season();
-    as currentSeason
-  ) {
-
+  } @else if (season(); as currentSeason) {
     <div class="page-header">
-
       <div>
-
-        <button
-          type="button"
-          class="back-button"
-          (click)="goBack()"
-        >
+        <button type="button" class="back-button" (click)="goBack()">
           ← Back to parcel
         </button>
 
-        <span class="eyebrow">
-          Growing plan
-        </span>
-
-        <h1>
-          {{ currentSeason.plan_name }}
-        </h1>
+        <span class="eyebrow">Growing plan</span>
+        <h1>{{ currentSeason.plan_name }}</h1>
 
         <p>
-          {{
-            currentSeason
-              .season_start_year
-          }}
-          ·
-          {{
-            formatCrop(
-              currentSeason.crop
-            )
-          }}
-          ·
-          {{
-            formatStrategy(
-              currentSeason
-                .farming_strategy
-            )
-          }}
+          {{ currentSeason.season_start_year }}
+          · {{ formatCrop(currentSeason.crop) }}
+          · {{ formatStrategy(currentSeason.farming_strategy) }}
         </p>
-
       </div>
 
-
       <div class="season-header-actions">
-
         <a
           class="secondary-action"
-          [routerLink]="[
-            '/parcel-seasons',
-            currentSeason.id,
-            'edit'
-          ]"
+          [routerLink]="['/parcel-seasons', currentSeason.id, 'edit']"
         >
           Edit management plan
         </a>
-
 
         <button
           type="button"
@@ -83,495 +36,174 @@
           [disabled]="runningSimulation()"
           (click)="runSimulation()"
         >
-
-          @if (
-            runningSimulation()
-          ) {
-
-            Running simulation...
-
-          } @else {
-
-            Run yield simulation
-
-          }
-
+          {{ runningSimulation() ? 'Running simulation...' : 'Run yield simulation' }}
         </button>
-
       </div>
-
     </div>
-
 
     @if (errorMessage()) {
-
-      <div
-        class="message error-message"
-      >
+      <div class="message error-message" role="alert">
         {{ errorMessage() }}
       </div>
-
     }
 
-
     <div class="summary-grid">
-
       <article class="summary-card">
-
-        <span>
-          Crop
-        </span>
-
-        <strong>
-          {{
-            formatCrop(
-              currentSeason.crop
-            )
-          }}
-        </strong>
-
+        <span>Crop</span>
+        <strong>{{ formatCrop(currentSeason.crop) }}</strong>
       </article>
 
-
       <article class="summary-card">
-
-        <span>
-          Farming strategy
-        </span>
-
-        <strong>
-          {{
-            formatStrategy(
-              currentSeason
-                .farming_strategy
-            )
-          }}
-        </strong>
-
+        <span>Farming strategy</span>
+        <strong>{{ formatStrategy(currentSeason.farming_strategy) }}</strong>
       </article>
 
-
       <article class="summary-card">
-
-        <span>
-          Previous simulations
-        </span>
-
-        <strong>
-          {{
-            currentSeason
-              .simulations.length
-          }}
-        </strong>
-
+        <span>Previous simulations</span>
+        <strong>{{ currentSeason.simulations.length }}</strong>
       </article>
-
     </div>
 
-
     <div class="content-grid">
-
       <section class="content-card">
-
         <div class="section-header">
-
           <div>
-
-            <span class="section-label">
-              Management
-            </span>
-
-            <h2>
-              Plan configuration
-            </h2>
-
+            <span class="section-label">Management</span>
+            <h2>Plan configuration</h2>
           </div>
-
         </div>
-
 
         <div class="data-list">
-
           <div class="data-row">
-
-            <span>
-              Plan name
-            </span>
-
-            <strong>
-              {{
-                currentSeason
-                  .plan_name
-              }}
-            </strong>
-
+            <span>Plan name</span>
+            <strong>{{ currentSeason.plan_name }}</strong>
           </div>
 
-
           <div class="data-row">
-
-            <span>
-              Target growing season
-            </span>
-
-            <strong>
-              {{
-                currentSeason
-                  .season_start_year
-              }}
-            </strong>
-
+            <span>Target growing season</span>
+            <strong>{{ currentSeason.season_start_year }}</strong>
           </div>
 
-
           <div class="data-row">
-
-            <span>
-              Crop
-            </span>
-
-            <strong>
-              {{
-                formatCrop(
-                  currentSeason.crop
-                )
-              }}
-            </strong>
-
+            <span>Crop</span>
+            <strong>{{ formatCrop(currentSeason.crop) }}</strong>
           </div>
 
-
           <div class="data-row">
-
-            <span>
-              Farming strategy
-            </span>
-
-            <strong>
-              {{
-                formatStrategy(
-                  currentSeason
-                    .farming_strategy
-                )
-              }}
-            </strong>
-
+            <span>Farming strategy</span>
+            <strong>{{ formatStrategy(currentSeason.farming_strategy) }}</strong>
           </div>
 
-
           <div class="data-row">
-
-            <span>
-              Irrigation
-            </span>
-
-            <strong>
-              {{
-                currentSeason
-                  .is_irrigated
-                  ? 'Yes'
-                  : 'No'
-              }}
-            </strong>
-
+            <span>Irrigation</span>
+            <strong>{{ currentSeason.is_irrigated ? 'Yes' : 'No' }}</strong>
           </div>
 
-
           <div class="data-row">
-
-            <span>
-              Machine use
-            </span>
-
-            <strong>
-              {{
-                formatMachineUse(
-                  currentSeason
-                    .machine_use
-                )
-              }}
-            </strong>
-
+            <span>Machine use</span>
+            <strong>{{ formatMachineUse(currentSeason.machine_use) }}</strong>
           </div>
 
-
           <div class="data-row">
-
-            <span>
-              Fertilizer type
-            </span>
-
-            <strong>
-              {{
-                currentSeason
-                  .fertilizer_type
-                  ?? 'None'
-              }}
-            </strong>
-
+            <span>Fertilizer type</span>
+            <strong>{{ currentSeason.fertilizer_type ?? 'None' }}</strong>
           </div>
 
-
           <div class="data-row">
-
-            <span>
-              Fertilizer quantity
-            </span>
-
+            <span>Fertilizer quantity</span>
             <strong>
-
-              @if (
-                currentSeason
-                  .fertilizer_quantity_kg_ha
-                !== null
-              ) {
-
-                {{
-                  currentSeason
-                    .fertilizer_quantity_kg_ha
-                }}
-                kg/ha
-
+              @if (currentSeason.fertilizer_quantity_kg_ha !== null) {
+                {{ currentSeason.fertilizer_quantity_kg_ha }} kg/ha
               } @else {
-
                 None
-
               }
-
             </strong>
-
           </div>
-
         </div>
-
       </section>
 
-
-      <section
-        class="content-card simulations-card"
-      >
-
+      <section class="content-card simulations-card">
         <div class="section-header">
-
           <div>
-
-            <span class="section-label">
-              Yield simulation
-            </span>
-
-            <h2>
-              Simulation history
-            </h2>
-
+            <span class="section-label">Yield simulation</span>
+            <h2>Simulation history</h2>
           </div>
-
         </div>
 
-        @if (
-          currentSeason
-            .simulations.length > 0
-        ) {
-
+        @if (currentSeason.simulations.length > 0) {
           <div class="simulation-list">
-
-            @for (
-              simulation
-                of currentSeason
-                  .simulations;
-              track
-                simulation
-                  .simulation_id
-            ) {
-
+            @for (simulation of currentSeason.simulations; track simulation.simulation_id) {
               <article class="simulation-row">
-
                 <div class="simulation-main">
-
-                  <div
-                    class="simulation-title-row"
-                  >
-
+                  <div class="simulation-title-row">
                     <span class="simulation-id">
-                      Simulation
-                      #{{
-                        simulation
-                          .simulation_id
-                      }}
+                      Simulation #{{ simulation.simulation_number }}
                     </span>
-
 
                     <span
                       class="status-badge"
-                      [class.current]="
-                        simulation.status ===
-                          'current'
-                      "
-                      [class.outdated]="
-                        simulation.status ===
-                          'outdated'
-                      "
+                      [class.current]="simulation.status === 'current'"
+                      [class.outdated]="simulation.status === 'outdated'"
                     >
-
-                      @if (
-                        simulation.status ===
-                          'current'
-                      ) {
-
-                        Current
-
-                      } @else {
-
-                        Outdated
-
-                      }
-
+                      {{ simulation.status === 'current' ? 'Current' : 'Outdated' }}
                     </span>
-
                   </div>
 
-
-                  @if (
-                    simulation
-                      .expected_yield_t_ha
-                    !== null
-                  ) {
-
-                    <strong>
-                      Expected yield:
-                      {{
-                        simulation
-                          .expected_yield_t_ha
-                      }}
-                      t/ha
-                    </strong>
-
+                  @if (simulation.expected_yield_t_ha !== null) {
+                    <strong>Expected yield: {{ simulation.expected_yield_t_ha }} t/ha</strong>
                   } @else {
-
                     <strong>
-                      Regional recent yield:
-                      {{
-                        simulation
-                          .recent_yield_mean_t_ha
-                      }}
-                      t/ha
+                      Regional recent yield: {{ simulation.recent_yield_mean_t_ha }} t/ha
                     </strong>
-
                   }
 
-
-                  @if (
-                    simulation
-                      .expected_total_t
-                    !== null
-                  ) {
-
-                    <span
-                      class="simulation-total"
-                    >
-                      Estimated production:
-                      {{
-                        simulation
-                          .expected_total_t
-                      }}
-                      t
+                  @if (simulation.expected_total_t !== null) {
+                    <span class="simulation-total">
+                      Estimated production: {{ simulation.expected_total_t }} t
                     </span>
-
                   }
 
-
-                  <span
-                    class="simulation-date"
-                  >
-                    {{
-                      simulation.created_at
-                        | date:
-                          'd MMM y, HH:mm'
-                    }}
+                  <span class="simulation-date">
+                    {{ simulation.created_at | date:'d MMM y, HH:mm' }}
                   </span>
 
-
-                  @if (
-                    simulation.status ===
-                      'outdated'
-                  ) {
-
-                    <span
-                      class="simulation-warning"
-                    >
-                      Soil data changed after this
-                      simulation was run.
+                  @if (simulation.status === 'outdated') {
+                    <span class="simulation-warning">
+                      Soil data changed after this simulation was run.
                     </span>
-
                   }
-
                 </div>
-
 
                 <button
                   type="button"
                   class="simulation-button"
-                  (click)="
-                    openSimulation(
-                      simulation
-                        .simulation_id
-                    )
-                  "
+                  (click)="openSimulation(simulation.simulation_id)"
                 >
                   View results
                 </button>
-
               </article>
-
             }
-
           </div>
-
         } @else {
-
           <div class="empty-simulation">
-
-            <h3>
-              No yield simulations yet
-            </h3>
+            <h3>No yield simulations yet</h3>
 
             <p>
-              Run a simulation to explore
-              potential yield outcomes under
-              different seasonal weather
-              scenarios.
+              Run a simulation to explore potential yield outcomes
+              under different seasonal weather scenarios.
             </p>
 
             <button
               type="button"
               class="secondary-action"
-              [disabled]="
-                runningSimulation()
-              "
+              [disabled]="runningSimulation()"
               (click)="runSimulation()"
             >
-
-              @if (
-                runningSimulation()
-              ) {
-
-                Running simulation...
-
-              } @else {
-
-                Run first simulation
-
-              }
-
+              {{ runningSimulation() ? 'Running simulation...' : 'Run first simulation' }}
             </button>
-
           </div>
-
         }
-
       </section>
-
     </div>
-
   }
-
 </section>
