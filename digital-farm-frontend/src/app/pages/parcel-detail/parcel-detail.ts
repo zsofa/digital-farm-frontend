@@ -391,7 +391,7 @@ export class ParcelDetail implements OnInit {
     if (!nextStatus) {
       const confirmed = window.confirm(
         `Set "${parcel.name}" inactive? ` +
-        'Historical seasons and simulations will remain available.',
+        'Previously created seasons and simulations will remain available.',
       );
 
       if (!confirmed) {
