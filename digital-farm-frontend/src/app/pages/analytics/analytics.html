@@ -1,274 +1,158 @@
-<section class="analytics-page">
-  <header class="page-header">
-    <span class="eyebrow">Analytics</span>
+<main class="analytics">
+  <header>
     <h1>Strategy comparison</h1>
-    <p>Compare two growing plans for the same parcel.</p>
+    <p>Compare up to four growing plans for the same parcel.</p>
   </header>
 
   @if (loading()) {
-  <div class="state" role="status">Loading growing plans...</div>
-  } @else if (!selectedFarm() && !error()) {
-  <div class="page-feedback" role="status">No farm available.</div>
+    <p role="status">Loading growing plans…</p>
   } @else {
-  @if (error()) {
-  <div class="page-feedback page-feedback-error" role="alert">
-    {{ error() }}
-  </div>
-  }
-
-  @if (!parcels().length && !error()) {
-  <div class="page-feedback" role="status">
-    Create an active parcel and a growing plan to get started.
-  </div>
-  } @else if (parcels().length) {
-  <section class="selectors" aria-label="Comparison settings">
-    <label for="parcel">
-      Parcel
-
-      <select id="parcel" [value]="parcelId() ?? ''" (change)="changeParcel($event)">
-        @for (p of parcels(); track p.id) {
-        <option [value]="p.id">{{ p.name }}</option>
-        }
-      </select>
-    </label>
-
-    @if (plans().length > 0) {
-    <label for="plan-a">
-      <span><i class="dot a"></i> Plan A</span>
-
-      <select id="plan-a" [value]="planAId() ?? ''" (change)="changePlan('a', $event)">
-        <option value="">Choose a plan</option>
-
-        @for (p of plans(); track p.id) {
-        <option [value]="p.id" [disabled]="p.id === planBId()">
-          {{ planLabel(p) }}
-        </option>
-        }
-      </select>
-    </label>
-
-    <label for="plan-b">
-      <span><i class="dot b"></i> Plan B</span>
-
-      <select id="plan-b" [disabled]="plans().length < 2" [value]="planBId() ?? ''" (change)="changePlan('b', $event)">
-        <option value="">
-          {{ plans().length < 2 ? '—' : 'Choose a plan' }} </option>
-
-            @for (p of plans(); track p.id) {
-        <option [value]="p.id" [disabled]="p.id === planAId()">
-          {{ planLabel(p) }}
-        </option>
-        }
-      </select>
-    </label>
+    @if (parcelError()) {
+      <div class="page-feedback page-feedback-error" role="alert">
+        {{ parcelError() }}
+      </div>
     }
-  </section>
 
-  @if (!plans().length) {
-  <div class="page-feedback" role="status">
-    Create a growing plan for this parcel to view its results.
-  </div>
-  } @else if (comparing()) {
-  <div class="state" role="status">Loading comparison...</div>
-  } @else if (!planA() || planAId() === planBId()) {
-  <div class="page-feedback" role="status">
-    Select a growing plan for Plan A.
-  </div>
-  } @else {
-  @if (plans().length === 1) {
-  <div class="page-feedback" role="status">
-    There is no second growing plan to compare.
-    Create another growing plan for this parcel to enable comparison.
-  </div>
-  } @else if (!planB()) {
-  <div class="page-feedback" role="status">
-    Select Plan B to compare it with Plan A.
-  </div>
-  }
+    @if (parcels().length) {
+      <section class="panel filters" aria-label="Comparison settings">
+        <label>
+          Parcel
+          <select #parcel (change)="changeParcel(parcel.value)">
+            @for (p of parcels(); track p.id) {
+              <option [value]="p.id" [selected]="p.id === parcelId()">{{ p.name }}</option>
+            }
+          </select>
+        </label>
 
-  @if (comparisonError()) {
-  <div class="page-feedback page-feedback-error" role="alert">
-    {{ comparisonError() }}
-  </div>
-  }
-
-  @if (missing(resultA()); as missingA) {
-  <div class="page-feedback" role="status">
-    Plan A — missing: {{ missingA }}
-  </div>
-  }
-
-  @if (missing(resultB()); as missingB) {
-  <div class="page-feedback" role="status">
-    Plan B — missing: {{ missingB }}
-  </div>
-  }
-
-  <div class="plan-headings">
-    <div>
-      <span class="tag a">A</span>
-
-      <div>
-        <strong>{{ planA()!.plan_name }}</strong>
-        <p>
-          {{ crop(planA()!.crop) }}
-          · {{ planA()!.season_start_year }}
-          · {{ source(detailA()) }}
-        </p>
-      </div>
-    </div>
-
-    <div>
-      <span class="tag b">B</span>
-
-      <div>
-        @if (planB(); as b) {
-        <strong>{{ b.plan_name }}</strong>
-        <p>
-          {{ crop(b.crop) }}
-          · {{ b.season_start_year }}
-          · {{ source(detailB()) }}
-        </p>
-        } @else {
-        <strong>—</strong>
-        }
-      </div>
-    </div>
-  </div>
-
-  <div class="kpi-grid">
-    @for (m of metrics(); track m.label) {
-    <article class="kpi">
-      <h2>{{ m.label }}</h2>
-      <span class="unit">{{ m.unit }}</span>
-
-      <div class="kpi-values">
-        <div>
-          <span class="plan-label">A</span>
-          <strong>{{ number(m.a) }}</strong>
-        </div>
-
-        <div>
-          <span class="plan-label">B</span>
-          <strong>{{ number(m.b) }}</strong>
-        </div>
-      </div>
-
-      <div class="delta">
-        <span>B − A</span>
-        <strong>{{ difference(m) }}</strong>
-      </div>
-    </article>
-    }
-  </div>
-
-  <div class="chart-grid">
-    <section class="chart-card">
-      <h2>Expected yield</h2>
-      <p>t/ha</p>
-
-      <div class="bar-chart">
-        @for (bar of yieldBars(); track bar.label) {
-        <div class="bar-row">
-          <div class="bar-caption">
-            <span>
-              {{ bar.label }}
-              @if (bar.plan; as plan) {
-              · {{ crop(plan.crop) }}
+        @if (available().length && selected().length < 4) {
+          <label>
+            Add growing plan
+            <select #picker (change)="addPlan(picker.value); picker.value = ''">
+              <option value="">Choose a plan</option>
+              @for (p of available(); track p.id) {
+                <option [value]="p.id">{{ planLabel(p) }}</option>
               }
-            </span>
-            <strong>{{ number(bar.value) }}</strong>
-          </div>
-
-          <div class="bar-track" aria-hidden="true">
-            <div class="bar-fill" [class.b]="bar.tone === 'b'" [style.width.%]="width(bar.value, yieldMax())"></div>
-          </div>
-        </div>
+            </select>
+          </label>
         }
+      </section>
 
-        <div class="axis" aria-hidden="true">
-          <span>0</span>
-          <span>{{ number(yieldMax() / 2) }}</span>
-          <span>{{ number(yieldMax()) }}</span>
+      @if (!plans().length) {
+        <div class="page-feedback">
+          Create a growing plan for this parcel to view its results.
         </div>
+      } @else if (plans().length === 1) {
+        <div class="page-feedback">
+          This parcel has one growing plan. Create another to compare strategies.
+        </div>
+      } @else if (!selected().length) {
+        <p role="status">Choose a growing plan to view its results.</p>
+      }
+    } @else if (!parcelError()) {
+      <div class="page-feedback">
+        {{ context.selectedFarm() ? 'Create an active parcel to get started.' : 'No farm available.' }}
       </div>
-    </section>
+    }
+  }
 
-    <section class="chart-card">
-      <div class="chart-heading">
-        <div>
-          <h2>Nitrogen input &amp; removal</h2>
-          <p>kg N/ha</p>
-        </div>
+  @if (columns(); as cols) {
+    @if (cols.length) {
+      <div class="grid plans">
+        @for (c of cols; track c.plan.id) {
+          <article class="panel plan" [attr.data-plan]="c.letter">
+            <strong>Plan {{ c.letter }}{{ $first ? ' · Baseline' : '' }}</strong>
+            <h2>{{ c.plan.plan_name }}</h2>
+            <p>{{ c.settings[0] }} · {{ c.plan.season_start_year }}</p>
+            <small [class.error]="c.failed">{{ c.status }}</small>
 
-        <div class="legend">
-          <span><i class="dot a"></i>A</span>
-          <span><i class="dot b"></i>B</span>
-        </div>
-      </div>
-
-      <div class="bar-chart nitrogen">
-        @for (group of nitrogenBars(); track group.label) {
-        <div class="nitrogen-group">
-          <h3>{{ group.label }}</h3>
-
-          <div class="paired-bar">
-            <span>A</span>
-
-            <div class="bar-track" aria-hidden="true">
-              <div class="bar-fill" [style.width.%]="width(group.a, nitrogenMax())"></div>
-            </div>
-
-            <strong>{{ number(group.a) }}</strong>
-          </div>
-
-          <div class="paired-bar">
-            <span>B</span>
-
-            <div class="bar-track" aria-hidden="true">
-              <div class="bar-fill b" [style.width.%]="width(group.b, nitrogenMax())"></div>
-            </div>
-
-            <strong>{{ number(group.b) }}</strong>
-          </div>
-        </div>
+            @if (plans().length > 1) {
+              <button
+                type="button"
+                (click)="removePlan(c.plan.id)"
+                [attr.aria-label]="'Remove plan ' + c.letter + ': ' + c.plan.plan_name">
+                Remove
+              </button>
+            }
+          </article>
         }
-
-        <div class="axis nitrogen-axis" aria-hidden="true">
-          <span>0</span>
-          <span>{{ number(nitrogenMax() / 2) }}</span>
-          <span>{{ number(nitrogenMax()) }}</span>
-        </div>
       </div>
-    </section>
-  </div>
 
-  <section class="settings-card">
-    <h2>Plan settings</h2>
+      @if (cols.length > 1) {
+        <p class="hint">
+          Differences are relative to Plan A, in the unit shown.
+          Management score differences are in points.
+        </p>
+      }
 
-    <div class="table-scroll">
-      <table>
-        <thead>
-          <tr>
-            <th scope="col">Setting</th>
-            <th scope="col">Plan A</th>
-            <th scope="col">Plan B</th>
-          </tr>
-        </thead>
+      <div class="grid metrics">
+        @for (m of metrics; track m.label; let i = $index) {
+          <article class="panel">
+            <h2>{{ m.label }}</h2>
+            <small>{{ m.unit }}</small>
 
-        <tbody>
-          @for (row of settings(); track row.label) {
-          <tr [class.different]="planB() !== null && row.a !== row.b">
-            <th scope="row">{{ row.label }}</th>
-            <td>{{ row.a }}</td>
-            <td>{{ row.b }}</td>
-          </tr>
-          }
-        </tbody>
-      </table>
-    </div>
-  </section>
+            @for (c of cols; track c.plan.id) {
+              <div class="row" [attr.data-plan]="c.letter">
+                <b>{{ c.letter }}</b>
+                <strong>{{ number(c.values[i]) }}</strong>
+                @if (!$first) {
+                  <small>Δ {{ delta(c.values[i], cols[0].values[i]) }}</small>
+                }
+              </div>
+            }
+          </article>
+        }
+      </div>
+
+      <div class="grid charts">
+        @for (chart of charts(); track chart.title) {
+          <section class="panel">
+            <h2>{{ chart.title }}</h2>
+            <small>{{ chart.unit }}</small>
+
+            @for (g of chart.groups; track g.label) {
+              @if (g.label) { <h3>{{ g.label }}</h3> }
+
+              @for (r of g.rows; track r.letter) {
+                <div class="row bar" [attr.data-plan]="r.letter">
+                  <b>{{ r.letter }}</b>
+                  <span class="track" aria-hidden="true">
+                    <i [style.width.%]="chart.max && (r.value ?? 0) / chart.max * 100"></i>
+                  </span>
+                  <strong>{{ number(r.value) }}</strong>
+                </div>
+              }
+            }
+          </section>
+        }
+      </div>
+
+      <section class="panel">
+        <h2>Plan settings</h2>
+        <div class="scroll" tabindex="0" role="region" aria-label="Plan settings comparison">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Setting</th>
+                @for (c of cols; track c.plan.id) {
+                  <th scope="col">Plan {{ c.letter }}</th>
+                }
+              </tr>
+            </thead>
+            <tbody>
+              @for (label of settings; track label; let i = $index) {
+                <tr>
+                  <th scope="row">{{ label }}</th>
+                  @for (c of cols; track c.plan.id) {
+                    <td [class.changed]="c.settings[i] !== cols[0].settings[i]">
+                      {{ c.settings[i] }}
+                    </td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    }
   }
-  }
-  }
-</section>
+</main>

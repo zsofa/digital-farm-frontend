@@ -86,73 +86,24 @@
     </div>
 
     <div class="scenario-grid">
-      @if (getScenario('dry_hot'); as scenario) {
-        <article class="scenario-card">
-          <span class="scenario-label">Dry &amp; hot</span>
-          <h2>{{ scenario.predicted_yield_t_ha }} t/ha</h2>
+      @for (card of [
+        { label: 'Dry & hot', scenario: result.scenarios.dry_hot },
+        { label: 'Central weather scenario', scenario: result.scenarios.expected },
+        { label: 'Wet & cool', scenario: result.scenarios.wet_cool }
+      ]; track card.label) {
+        @if (card.scenario; as scenario) {
+          <article class="scenario-card" [class.expected]="$index === 1">
+            <span class="scenario-label">{{ card.label }}</span>
+            <h2>{{ scenario.predicted_yield_t_ha }} t/ha</h2>
 
-          <span class="total-yield">
-            Estimated production: {{ scenario.estimated_total_t }} t
-          </span>
-          <span class="total-formula">Predicted yield × official parcel area</span>
-
-          <div class="scenario-details">
-            <div>
-              <span>Temperature</span>
-              <strong>{{ scenario.temperature_c }} °C</strong>
-            </div>
-            <div>
-              <span>Precipitation</span>
-              <strong>{{ scenario.precipitation_mm }} mm</strong>
-            </div>
-          </div>
-        </article>
-      }
-
-      @if (getScenario('expected'); as scenario) {
-        <article class="scenario-card expected">
-          <span class="scenario-label">Central weather scenario</span>
-          <h2>{{ scenario.predicted_yield_t_ha }} t/ha</h2>
-
-          <span class="total-yield">
-            Estimated production: {{ scenario.estimated_total_t }} t
-          </span>
-          <span class="total-formula">Expected yield × official parcel area</span>
-
-          <div class="scenario-details">
-            <div>
-              <span>Temperature</span>
-              <strong>{{ scenario.temperature_c }} °C</strong>
-            </div>
-            <div>
-              <span>Precipitation</span>
-              <strong>{{ scenario.precipitation_mm }} mm</strong>
-            </div>
-          </div>
-        </article>
-      }
-
-      @if (getScenario('wet_cool'); as scenario) {
-        <article class="scenario-card">
-          <span class="scenario-label">Wet &amp; cool</span>
-          <h2>{{ scenario.predicted_yield_t_ha }} t/ha</h2>
-
-          <span class="total-yield">
-            Estimated production: {{ scenario.estimated_total_t }} t
-          </span>
-          <span class="total-formula">Predicted yield × official parcel area</span>
-
-          <div class="scenario-details">
-            <div>
-              <span>Temperature</span>
-              <strong>{{ scenario.temperature_c }} °C</strong>
-            </div>
-            <div>
-              <span>Precipitation</span>
-              <strong>{{ scenario.precipitation_mm }} mm</strong>
-            </div>
-          </div>
-        </article>
+            <span class="total-yield">
+              Estimated production: {{ scenario.estimated_total_t }} t
+            </span>
+            <span class="total-formula">
+              Predicted yield × official parcel area
+            </span>
+          </article>
+        }
       }
     </div>
 
@@ -166,8 +117,8 @@
 
       <p>
         These values represent potential yield outcomes under different seasonal
-        weather scenarios. They should be interpreted as decision-support
-        scenarios rather than deterministic weather or yield forecasts.
+        weather scenarios. Use them to compare how the assumed weather affects
+        estimated yield.
       </p>
     </div>
   }
