@@ -261,7 +261,7 @@
 
                   <div class="kpi-grid">
                     <article class="kpi-card">
-                      <span class="kpi-label">Applied Nitrogen</span>
+                      <span class="kpi-label">Nitrogen Applied Through Fertilizer</span>
                       <div class="kpi-value">
                         {{ formatNumber(nitrogen.applied_nitrogen_kg_ha) }}
                       </div>
@@ -269,7 +269,7 @@
                     </article>
 
                     <article class="kpi-card">
-                      <span class="kpi-label">Removed Nitrogen</span>
+                      <span class="kpi-label">Nitrogen Removed Through Crop Yield</span>
                       <div class="kpi-value">
                         {{ formatNumber(nitrogen.removed_nitrogen_kg_ha) }}
                       </div>
@@ -277,14 +277,14 @@
                     </article>
 
                     <article class="kpi-card">
-                      <span class="kpi-label">Estimated partial nitrogen balance</span>
+                      <span class="kpi-label">Partial Nitrogen Balance</span>
                       <div class="kpi-value">
                         {{ formatSignedNumber(nitrogen.nitrogen_balance_kg_ha) }}
                       </div>
                       <span class="kpi-unit">kg N/ha</span>
                     </article>
 
-                    <article class="kpi-card">
+                    <!----<article class="kpi-card">
                       <span class="kpi-label">
                         Estimated partial nitrogen removal ratio
                       </span>
@@ -298,7 +298,7 @@
                         <div class="kpi-value">—</div>
                         <p>Not defined when applied nitrogen is zero.</p>
                       }
-                    </article>
+                    </article>----->
                   </div>
                 </section>
               }

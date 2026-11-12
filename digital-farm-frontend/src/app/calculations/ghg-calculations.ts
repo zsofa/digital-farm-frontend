@@ -66,14 +66,14 @@ const REGIONS = [
 ] as const;
 
 const MACHINE_FACTORS: Record<string, number> = {
-  low: 0.25,
+  low: 1.00,
   medium: 0.60,
-  high: 1.00,
+  high: 0.25,
 };
 
 const STRATEGY_FACTORS: Record<string, number> = {
-  conventional: 1.00,
-  reduced: 0.70,
+  conventional: 0.70,
+  reduced: 1.00,
 };
 
 function normalizeCounty(value: string): string {
